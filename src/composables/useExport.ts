@@ -12,7 +12,7 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   // Create a visible container — no opacity:0, let it auto-size to content
   const container = document.createElement('div')
   container.style.cssText =
-    'position:fixed;left:-9999px;top:0;font-size:16px;padding:4px;'
+    'position:fixed;left:-9999px;top:0;font-size:18px;padding:2px;'
 
   const clone = svgElement.cloneNode(true) as SVGElement
   clone.removeAttribute('style')
