@@ -3,6 +3,30 @@
     <div class="agile-latex__top">
       <SymbolPanel @insert="handleInsert" />
     </div>
+    <div class="agile-latex__toolbar">
+      <span class="agile-latex__label">字体颜色</span>
+      <button
+        v-for="c in presetColors"
+        :key="c"
+        class="color-btn"
+        :class="{ active: color === c }"
+        :style="{ backgroundColor: c }"
+        :title="c"
+        @click="setColor(c)"
+      />
+      <button
+        class="color-btn color-btn--none"
+        :class="{ active: !color }"
+        title="默认"
+        @click="setColor('')"
+      >×</button>
+      <input
+        type="color"
+        class="color-input"
+        :value="color || '#000000'"
+        @input="setColor(($event.target as HTMLInputElement).value)"
+      />
+    </div>
     <div class="agile-latex__bottom">
       <div class="agile-latex__input">
         <div class="agile-latex__input-header">
@@ -20,13 +44,14 @@
       </div>
       <div class="agile-latex__preview">
         <div class="agile-latex__label">实时预览</div>
-        <PreviewPanel :latex="modelValue" />
+        <PreviewPanel :latex="coloredLatex" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
@@ -50,6 +75,23 @@ const emit = defineEmits<{
 
 const { exportFormula } = useExport()
 
+// ── 字体颜色 ──
+const color = ref('')
+const presetColors = [
+  '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
+  '#1abc9c', '#3498db', '#9b59b6', '#e91e63',
+  '#ff5722', '#795548', '#607d8b', '#000000',
+]
+
+const coloredLatex = computed(() => {
+  if (!color.value || !props.modelValue.trim()) return props.modelValue
+  return `{\\color{${color.value}} ${props.modelValue}}`
+})
+
+function setColor(c: string) {
+  color.value = c
+}
+
 function handleInput(value: string) {
   emit('update:modelValue', value)
 }
@@ -66,10 +108,10 @@ async function handleExport() {
 }
 
 async function doExport(): Promise<AgileLatexExport> {
-  return await exportFormula(props.modelValue || '')
+  return await exportFormula(coloredLatex.value || '')
 }
 
-// --- Exposed methods for parent component via template ref ---
+// --- Exposed methods ---
 
 async function exposedExportFormula(): Promise<AgileLatexExport> {
   const result = await doExport()
@@ -80,7 +122,7 @@ async function exposedExportFormula(): Promise<AgileLatexExport> {
 
 async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
   emit('update:modelValue', latex)
-  const result = await exportFormula(latex)
+  const result = await exportFormula(coloredLatex.value)
   console.log('[AgileLatex] renderFormula:', result)
   emit('render', result)
   return result
@@ -104,10 +146,56 @@ defineExpose({
 }
 
 .agile-latex__top {
-  height: 35%;
-  min-height: 180px;
+  height: 32%;
+  min-height: 160px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
+}
+
+.agile-latex__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--td-component-border);
+  background: var(--td-bg-color-secondarycontainer);
+}
+
+.color-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.color-btn:hover {
+  transform: scale(1.2);
+}
+.color-btn.active {
+  border-color: var(--td-brand-color);
+  transform: scale(1.15);
+}
+
+.color-btn--none {
+  background: #fff;
+  border: 2px solid #ccc;
+  color: #666;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-input {
+  width: 26px;
+  height: 22px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
 }
 
 .agile-latex__bottom {
@@ -144,7 +232,6 @@ defineExpose({
   font-size: 13px;
   font-weight: 500;
   color: var(--td-text-color-secondary);
-  margin-bottom: 8px;
 }
 
 .agile-latex__input-header .agile-latex__label {
