@@ -9,6 +9,9 @@
         @render="onRender"
       />
     </div>
+    <div v-if="lastResult" style="z-index: 99999;">
+      <img :src="lastResult.base64" style="background: #FAFCFF">
+    </div>
   </div>
 </template>
 
@@ -27,7 +30,7 @@ function onRender(result: AgileLatexExport) {
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
-.playground { padding: 24px; height: 100vh; display: flex; flex-direction: column; gap: 16px; }
+.playground { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 .title { font-size: 20px; font-weight: 600; }
 .editor-wrapper { flex: 1; min-height: 0; }
 .export-preview { background: #fff; border-radius: 8px; padding: 16px; border: 1px solid #e0e0e0; }
