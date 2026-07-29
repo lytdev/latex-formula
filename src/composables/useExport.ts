@@ -3,11 +3,10 @@ import type { AgileLatexExport } from '../types'
 import { Canvg } from 'canvg'
 
 const MAX_CANVAS_SIZE = 4096
-const PADDING_PX = 8
+const PADDING_PX = 16
 
 /**
- * Scan canvas pixels to find the bounding box of actual content
- * (any pixel darker than pure white).
+ * Scan canvas pixels to find the bounding box of actual content.
  */
 function scanContentBounds(
   ctx: CanvasRenderingContext2D,
@@ -21,8 +20,8 @@ function scanContentBounds(
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4
-      // Treat any pixel that isn't near-white as content
-      if (d[i] < 248 || d[i + 1] < 248 || d[i + 2] < 248) {
+      // Anti-aliased edges can be very light — use a lower threshold
+      if (d[i] < 240 || d[i + 1] < 240 || d[i + 2] < 240) {
         if (x < minX) minX = x
         if (y < minY) minY = y
         if (x > maxX) maxX = x
