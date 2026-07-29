@@ -20,7 +20,7 @@
       </div>
       <div class="agile-latex__preview">
         <div class="agile-latex__label">实时预览</div>
-        <PreviewPanel :latex="modelValue" @render="handlePreviewRender" />
+        <PreviewPanel :latex="modelValue" />
       </div>
     </div>
   </div>
@@ -61,9 +61,7 @@ function handleInsert(latex: string) {
 
 async function handleExport() {
   const result = await doExport()
-  // Result is returned to the consumer via the exposed method,
-  // but the button also triggers a side effect.
-  // We emit the render event so consumers can react.
+  console.log('[AgileLatex] 导出:', result)
   emit('render', result)
 }
 
@@ -71,25 +69,19 @@ async function doExport(): Promise<AgileLatexExport> {
   return await exportFormula(props.modelValue || '')
 }
 
-function handlePreviewRender(result: AgileLatexExport) {
-  emit('render', result)
-}
-
 // --- Exposed methods for parent component via template ref ---
 
 async function exposedExportFormula(): Promise<AgileLatexExport> {
   const result = await doExport()
+  console.log('[AgileLatex] exportFormula:', result)
   emit('render', result)
   return result
 }
 
 async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
-  // Update the model so the editor and eventual preview catch up.
   emit('update:modelValue', latex)
-  // Render and export immediately using the export pipeline (not the
-  // debounced preview path) so the caller gets a consistent result
-  // without a race condition.
   const result = await exportFormula(latex)
+  console.log('[AgileLatex] renderFormula:', result)
   emit('render', result)
   return result
 }

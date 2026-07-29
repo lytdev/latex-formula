@@ -20,14 +20,9 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import { useMathJax } from '../composables/useMathJax'
-import type { AgileLatexExport } from '../types'
 
 const props = defineProps<{
   latex: string
-}>()
-
-const emit = defineEmits<{
-  render: [result: AgileLatexExport]
 }>()
 
 const { render, isReady, ready } = useMathJax()
@@ -39,16 +34,12 @@ ready()
 function doRender(latexCode: string): void {
   if (!isReady.value || !previewContainer.value || !latexCode.trim()) return
 
-  const { svgElement, mathml } = render(latexCode, true)
+  const { svgElement } = render(latexCode, true)
   const container = previewContainer.value
 
-  // Clear previous content and append new SVG
+  // Clear previous content and append new SVG — visual only, no events
   container.innerHTML = ''
   container.appendChild(svgElement)
-
-  // Emit render event with latex + mathml (base64 is omitted here —
-  // it is generated on demand via the explicit export button / exportFormula).
-  emit('render', { latex: latexCode, mathml, base64: '' })
 }
 
 // Debounced render on latex change
