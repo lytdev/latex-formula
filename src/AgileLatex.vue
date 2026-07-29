@@ -4,7 +4,22 @@
       <SymbolPanel @insert="handleInsert" />
     </div>
     <div class="agile-latex__toolbar">
-      <span class="agile-latex__label">字体颜色</span>
+      <t-button
+        size="small"
+        variant="text"
+        :disabled="!canUndo"
+        title="撤销 (Ctrl+Z)"
+        @click="undo"
+      >↩ 撤销</t-button>
+      <t-button
+        size="small"
+        variant="text"
+        :disabled="!canRedo"
+        title="恢复 (Ctrl+Shift+Z)"
+        @click="redo"
+      >↪ 恢复</t-button>
+      <span class="toolbar-sep" />
+      <span class="agile-latex__label">颜色</span>
       <button
         v-for="c in presetColors"
         :key="c"
@@ -15,7 +30,7 @@
       />
       <button
         class="color-btn color-btn--none"
-        title="自定义"
+        title="自定义颜色"
         @click="pickCustomColor"
       >+</button>
     </div>
@@ -44,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref, computed, useTemplateRef, onMounted, onUnmounted } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
@@ -68,6 +83,61 @@ const emit = defineEmits<{
 
 const { exportFormula } = useExport()
 const latexInputRef = useTemplateRef('latexInputRef')
+
+// ── 撤销/恢复 ──
+const MAX_HISTORY = 200
+const history = ref<string[]>([])
+const future = ref<string[]>([])
+
+const canUndo = computed(() => history.value.length > 0)
+const canRedo = computed(() => future.value.length > 0)
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+function saveToHistory() {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    if (history.value.length >= MAX_HISTORY) {
+      history.value.shift()
+    }
+    history.value.push(props.modelValue)
+    // Any new typing after an undo clears the redo stack
+    future.value = []
+  }, 500)
+}
+
+function undo() {
+  if (!canUndo.value) return
+  const prev = history.value.pop()!
+  future.value.push(props.modelValue)
+  emit('update:modelValue', prev)
+}
+
+function redo() {
+  if (!canRedo.value) return
+  const next = future.value.pop()!
+  history.value.push(props.modelValue)
+  emit('update:modelValue', next)
+}
+
+// Ctrl+Z / Ctrl+Shift+Z hotkeys
+function onKeyDown(e: KeyboardEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z' && !e.shiftKey) {
+      e.preventDefault()
+      undo()
+    } else if (e.key === 'z' && e.shiftKey) {
+      e.preventDefault()
+      redo()
+    } else if (e.key === 'Z') {
+      e.preventDefault()
+      redo()
+    }
+  }
+}
+
+onMounted(() => document.addEventListener('keydown', onKeyDown))
+onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
 
 // ── 字体颜色 ──
 const presetColors = [
@@ -120,10 +190,12 @@ function pickCustomColor() {
 }
 
 function handleInput(value: string) {
+  saveToHistory()
   emit('update:modelValue', value)
 }
 
 function handleInsert(latex: string) {
+  saveToHistory()
   const newValue = props.modelValue + latex
   emit('update:modelValue', newValue)
 }
@@ -186,6 +258,13 @@ defineExpose({
   padding: 6px 12px;
   border-bottom: 1px solid var(--td-component-border);
   background: var(--td-bg-color-secondarycontainer);
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--td-component-border);
+  margin: 0 6px;
 }
 
 .color-btn {
