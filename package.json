@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/agile-latex.cjs",
   "module": "./dist/agile-latex.mjs",
   "types": "./dist/index.d.ts",
@@ -24,6 +26,7 @@
     "vue": "^3.3.0"
   },
   "dependencies": {
+    "canvg": "^4.0.3",
     "mathjax-full": "^3.2.2"
   },
   "devDependencies": {
@@ -35,9 +38,18 @@
     "vue": "^3.5.0",
     "vue-tsc": "^2.0.0"
   },
-  "keywords": ["latex", "mathjax", "vue", "editor", "math", "formula"],
+  "keywords": [
+    "latex",
+    "mathjax",
+    "vue",
+    "editor",
+    "math",
+    "formula"
+  ],
   "license": "MIT",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
