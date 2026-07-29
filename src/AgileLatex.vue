@@ -9,23 +9,15 @@
         v-for="c in presetColors"
         :key="c"
         class="color-btn"
-        :class="{ active: color === c }"
         :style="{ backgroundColor: c }"
         :title="c"
-        @click="setColor(c)"
+        @click="applyColor(c)"
       />
       <button
         class="color-btn color-btn--none"
-        :class="{ active: !color }"
-        title="默认"
-        @click="setColor('')"
-      >×</button>
-      <input
-        type="color"
-        class="color-input"
-        :value="color || '#000000'"
-        @input="setColor(($event.target as HTMLInputElement).value)"
-      />
+        title="自定义"
+        @click="pickCustomColor"
+      >+</button>
     </div>
     <div class="agile-latex__bottom">
       <div class="agile-latex__input">
@@ -36,6 +28,7 @@
           </t-button>
         </div>
         <LatexInput
+          ref="latexInputRef"
           :model-value="modelValue"
           :placeholder="placeholder"
           :readonly="readonly"
@@ -44,14 +37,14 @@
       </div>
       <div class="agile-latex__preview">
         <div class="agile-latex__label">实时预览</div>
-        <PreviewPanel :latex="coloredLatex" />
+        <PreviewPanel :latex="modelValue" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
@@ -74,22 +67,56 @@ const emit = defineEmits<{
 }>()
 
 const { exportFormula } = useExport()
+const latexInputRef = useTemplateRef('latexInputRef')
 
 // ── 字体颜色 ──
-const color = ref('')
 const presetColors = [
   '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
   '#1abc9c', '#3498db', '#9b59b6', '#e91e63',
   '#ff5722', '#795548', '#607d8b', '#000000',
 ]
 
-const coloredLatex = computed(() => {
-  if (!color.value || !props.modelValue.trim()) return props.modelValue
-  return `{\\color{${color.value}} ${props.modelValue}}`
-})
+function insertAtCursor(before: string, after: string, placeholder: string) {
+  const ta = latexInputRef.value?.getNativeTextarea()
+  if (!ta) return
 
-function setColor(c: string) {
-  color.value = c
+  const start = ta.selectionStart
+  const end = ta.selectionEnd
+  const text = props.modelValue
+
+  if (start !== end) {
+    // Wrap selected text
+    const selected = text.slice(start, end)
+    const newText = text.slice(0, start) + before + selected + after + text.slice(end)
+    emit('update:modelValue', newText)
+    // Restore selection: select the wrapped portion
+    requestAnimationFrame(() => {
+      ta.focus()
+      ta.setSelectionRange(start, start + before.length + selected.length + after.length)
+    })
+  } else {
+    // Insert with placeholder at cursor
+    const newText = text.slice(0, start) + before + placeholder + after + text.slice(end)
+    emit('update:modelValue', newText)
+    // Place cursor inside the inserted content
+    const cursorPos = start + before.length + placeholder.length
+    requestAnimationFrame(() => {
+      ta.focus()
+      ta.setSelectionRange(cursorPos, cursorPos)
+    })
+  }
+}
+
+function applyColor(hex: string) {
+  insertAtCursor(`\\textcolor{${hex}}{`, '}', ' ')
+}
+
+function pickCustomColor() {
+  const input = document.createElement('input')
+  input.type = 'color'
+  input.value = '#000000'
+  input.addEventListener('input', () => applyColor(input.value))
+  input.click()
 }
 
 function handleInput(value: string) {
@@ -108,7 +135,7 @@ async function handleExport() {
 }
 
 async function doExport(): Promise<AgileLatexExport> {
-  return await exportFormula(coloredLatex.value || '')
+  return await exportFormula(props.modelValue || '')
 }
 
 // --- Exposed methods ---
@@ -122,7 +149,7 @@ async function exposedExportFormula(): Promise<AgileLatexExport> {
 
 async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
   emit('update:modelValue', latex)
-  const result = await exportFormula(coloredLatex.value)
+  const result = await exportFormula(latex)
   console.log('[AgileLatex] renderFormula:', result)
   emit('render', result)
   return result
@@ -168,14 +195,11 @@ defineExpose({
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.15s, border-color 0.15s;
+  transition: transform 0.15s;
 }
 .color-btn:hover {
   transform: scale(1.2);
-}
-.color-btn.active {
-  border-color: var(--td-brand-color);
-  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .color-btn--none {
@@ -187,15 +211,6 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.color-input {
-  width: 26px;
-  height: 22px;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  margin-left: 4px;
 }
 
 .agile-latex__bottom {

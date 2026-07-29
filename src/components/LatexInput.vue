@@ -1,6 +1,7 @@
 <template>
   <div class="latex-input">
     <t-textarea
+      ref="textareaRef"
       :value="modelValue"
       :placeholder="placeholder"
       :readonly="readonly"
@@ -11,6 +12,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, useTemplateRef } from 'vue'
+
 defineProps<{
   modelValue: string
   placeholder?: string
@@ -20,6 +23,17 @@ defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+const textareaRef = useTemplateRef('textareaRef')
+
+/** Get the native <textarea> element for cursor/selection manipulation. */
+function getNativeTextarea(): HTMLTextAreaElement | null {
+  const el = (textareaRef.value as any)?.$el
+  if (!el) return null
+  return el.querySelector('textarea') ?? (el as HTMLTextAreaElement)
+}
+
+defineExpose({ getNativeTextarea })
 
 function onInput(value: string) {
   emit('update:modelValue', value)
