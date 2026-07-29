@@ -51,8 +51,16 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
     try {
       const bbox = contentG.getBBox()
       if (bbox.width > 0 && bbox.height > 0) {
-        cx = bbox.x - CONTENT_PADDING_VB
-        cy = bbox.y - CONTENT_PADDING_VB
+        // getBBox returns coords in the <g>'s LOCAL space.
+        // The <g> has transform="translate(tx, ty)" for centering —
+        // add that offset to get SVG-viewBox-space coordinates.
+        const xf = contentG.getAttribute('transform') || ''
+        const m = xf.match(/translate\(\s*(-?[\d.]+)\s*,?\s*(-?[\d.]+)?\s*\)/)
+        const tx = m ? parseFloat(m[1]) : 0
+        const ty = m && m[2] !== undefined ? parseFloat(m[2]) : 0
+
+        cx = tx + bbox.x - CONTENT_PADDING_VB
+        cy = ty + bbox.y - CONTENT_PADDING_VB
         cw = bbox.width + CONTENT_PADDING_VB * 2
         ch = bbox.height + CONTENT_PADDING_VB * 2
       }
