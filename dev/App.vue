@@ -9,32 +9,14 @@
         @render="onRender"
       />
     </div>
-    <div v-if="lastResult" class="export-preview">
-      <h3>导出结果</h3>
-      <div class="export-sections">
-        <div class="export-section">
-          <h4>LaTeX 代码</h4>
-          <pre>{{ lastResult.latex }}</pre>
-        </div>
-        <div class="export-section">
-          <h4>MathML 代码</h4>
-          <pre>{{ lastResult.mathml }}</pre>
-        </div>
-        <div class="export-section">
-          <h4>Base64 图片</h4>
-          <img v-if="lastResult.base64" :src="lastResult.base64" alt="Formula PNG" class="export-img" />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { AgileLatex, type AgileLatexExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)
-const editorRef = useTemplateRef('editorRef')
 const lastResult = ref<AgileLatexExport | null>(null)
 
 function onRender(result: AgileLatexExport) {
