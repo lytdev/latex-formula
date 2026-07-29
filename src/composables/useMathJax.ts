@@ -54,7 +54,7 @@ export function useMathJax(): {
     RegisterHTMLHandler(adaptor)
 
     texInput = new TeX({ packages: AllPackages })
-    const svgOutput = new SVG({ fontCache: 'local' })
+    const svgOutput = new SVG({ fontCache: 'none' })
 
     doc = mathjax.document(document, {
       InputJax: texInput,
