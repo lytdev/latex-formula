@@ -16,48 +16,59 @@ const FALLBACK_HEIGHT = 200
  * export pipeline (e.g. by PreviewPanel for @render events).
  */
 export async function svgToBase64(svgElement: Element): Promise<string> {
-  const serializer = new XMLSerializer()
-  const svgString = serializer.serializeToString(svgElement)
+  // Clone and fix up the SVG for standalone rendering.
+  // MathJax outputs width/height in ex units (e.g. width="15ex") which
+  // browsers cannot resolve when the SVG is loaded as a standalone <img>
+  // (there's no CSS font context). We convert ex-based dimensions to px
+  // using the em/ex values from the metrics (em=16, ex=8).
+  const clone = svgElement.cloneNode(true) as SVGElement
 
-  // Create an SVG blob and object URL
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(svgBlob)
+  // Convert ex-based width/height to px so the standalone image resolves
+  const rawW = clone.getAttribute('width')
+  const rawH = clone.getAttribute('height')
+  if (rawW && rawW.endsWith('ex')) {
+    clone.setAttribute('width', String(parseFloat(rawW) * 8))
+  }
+  if (rawH && rawH.endsWith('ex')) {
+    clone.setAttribute('height', String(parseFloat(rawH) * 8))
+  }
+
+  // Ensure explicit namespace for standalone rendering
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+
+  const serializer = new XMLSerializer()
+  const svgString = serializer.serializeToString(clone)
+
+  // Use data URI instead of blob URL — better same-origin handling
+  const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString)
 
   return new Promise<string>((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
       const canvas = document.createElement('canvas')
 
-      // Use naturalWidth/naturalHeight (the SVG's intrinsic size)
-      // rather than getBBox() which may not be available or accurate.
       const naturalW = img.naturalWidth || FALLBACK_WIDTH
       const naturalH = img.naturalHeight || FALLBACK_HEIGHT
 
-      // Scale up 2x for retina sharpness, capped to MAX_CANVAS_SIZE
       canvas.width = Math.min(Math.ceil(naturalW * 2), MAX_CANVAS_SIZE)
       canvas.height = Math.min(Math.ceil(naturalH * 2), MAX_CANVAS_SIZE)
 
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        URL.revokeObjectURL(url)
         reject(new Error('Failed to get canvas 2d context'))
         return
       }
-      // White background
       ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      // Draw the image scaled to fill canvas
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
       const dataUrl = canvas.toDataURL('image/png')
-      URL.revokeObjectURL(url)
       resolve(dataUrl)
     }
     img.onerror = () => {
-      URL.revokeObjectURL(url)
       reject(new Error('Failed to load SVG image for export'))
     }
-    img.src = url
+    img.src = dataUri
   })
 }
 
