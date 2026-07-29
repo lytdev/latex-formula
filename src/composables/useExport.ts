@@ -57,15 +57,9 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   const pxW = Math.ceil(exW * 8) // ex → px (em=16, ex=8)
   const pxH = Math.ceil(exH * 8)
 
-  // Ensure explicit namespace
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-
-  // Remove any background-color from the SVG (MathJax may add a gray bg)
+  // Remove any MathJax background styling
   clone.removeAttribute('style')
-  clone.querySelectorAll('[style]').forEach((el) => {
-    ;(el as HTMLElement).style.backgroundColor = ''
-    ;(el as HTMLElement).style.background = ''
-  })
+  clone.querySelectorAll('[style]').forEach((el) => el.removeAttribute('style'))
 
   const svgString = new XMLSerializer().serializeToString(clone)
 
