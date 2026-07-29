@@ -10,21 +10,18 @@ let measureDiv: HTMLDivElement | null = null
 export async function svgToBase64(svgElement: Element): Promise<string> {
   if (!measureDiv) {
     measureDiv = document.createElement('div')
+    // font-size gives ex units a context to resolve naturally
     measureDiv.style.cssText =
-      'position:fixed;left:0;top:0;opacity:0;pointer-events:none;'
+      'position:fixed;left:0;top:0;opacity:0;pointer-events:none;font-size:16px;'
     document.body.appendChild(measureDiv)
   }
 
-  // Clone and fix dimensions: convert ex → px so the element
-  // has a resolvable size even off-screen.
   const clone = svgElement.cloneNode(true) as SVGElement
-  const attW = clone.getAttribute('width')
-  const attH = clone.getAttribute('height')
-  const exW = attW ? parseFloat(attW.replace('ex', '')) : 15
-  const exH = attH ? parseFloat(attH.replace('ex', '')) : 3
-  clone.setAttribute('width', `${Math.ceil(exW * 8)}px`)
-  clone.setAttribute('height', `${Math.ceil(exH * 8)}px`)
 
+  // Remove any style that might interfere with sizing
+  clone.removeAttribute('style')
+
+  // Let ex-based width/height resolve via inherited font-size: 16px
   measureDiv.innerHTML = ''
   measureDiv.appendChild(clone)
 
