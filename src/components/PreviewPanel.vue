@@ -82,25 +82,24 @@ onUnmounted(() => {
   border-radius: var(--td-radius-default);
   padding: 16px;
   background: var(--td-bg-color-container);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .preview-placeholder {
   color: var(--td-text-color-placeholder);
   font-size: 14px;
-}
-
-.preview-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 100%;
-  min-height: 100%;
+  height: 100%;
+}
+
+.preview-content {
+  display: block;
+  overflow: visible;
 }
 
 .preview-content :deep(svg) {
+  display: block;
   max-width: 100%;
   height: auto;
 }
