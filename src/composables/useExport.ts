@@ -2,41 +2,83 @@ import { useMathJax } from './useMathJax'
 import type { AgileLatexExport } from '../types'
 import { toPng } from 'dom-to-image-more'
 
+const PAD = 500 // padding in SVG viewBox units
+
 /**
- * Hidden container for rendering formulas off-screen.
+ * Hidden container for measuring SVG dimensions before capture.
  */
-let exportContainer: HTMLDivElement | null = null
-function getExportContainer(): HTMLDivElement {
-  if (!exportContainer) {
-    exportContainer = document.createElement('div')
-    exportContainer.style.cssText =
+let measureDiv: HTMLDivElement | null = null
+function getMeasureDiv(): HTMLDivElement {
+  if (!measureDiv) {
+    measureDiv = document.createElement('div')
+    measureDiv.style.cssText =
       'position:fixed;left:0;top:0;opacity:0;pointer-events:none;'
-    document.body.appendChild(exportContainer)
+    document.body.appendChild(measureDiv)
   }
-  return exportContainer
+  return measureDiv
 }
 
 /**
- * Convert a LaTeX formula to a base64 PNG by rendering it in a
- * hidden DOM element and capturing with dom-to-image-more.
- * No SVG serialization needed — it captures exactly what MathJax renders.
+ * Convert LaTeX to a base64 PNG.
+ *
+ * 1. Render formula to SVG via MathJax
+ * 2. Append to hidden DOM → getBBox for exact content bounds
+ * 3. Crop viewBox to content area
+ * 4. Capture with dom-to-image-more
  */
 export async function svgToBase64(svgElement: Element): Promise<string> {
-  const container = getExportContainer()
+  const div = getMeasureDiv()
+  const clone = svgElement.cloneNode(true) as SVGElement
+  div.innerHTML = ''
+  div.appendChild(clone)
 
-  // Clear previous content and append the new SVG
-  container.innerHTML = ''
-  container.appendChild(svgElement.cloneNode(true))
+  // Get content bounds in SVG viewBox coordinates
+  const vb = clone.getAttribute('viewBox')?.split(/\s+/).map(Number) ?? [0, 0, 12800, 2000]
+  const vbW = vb[2] || 12800
+  const contentG = clone.querySelector('g[data-mml-node="math"]') as SVGGraphicsElement | null
 
-  // Capture the rendered element as PNG at 2x resolution
-  const dataUrl = await toPng(container.firstElementChild as HTMLElement, {
+  let cx = vb[0] ?? 0
+  let cy = vb[1] ?? 0
+  let cw = vbW
+  let ch = vb[3] ?? 2000
+
+  if (contentG) {
+    try {
+      const bbox = contentG.getBBox()
+      if (bbox.width > 0 && bbox.height > 0) {
+        // Parse translate from <g transform="translate(X, Y)">
+        const xf = contentG.getAttribute('transform') || ''
+        const m = xf.match(/translate\(\s*(-?[\d.]+)\s*,?\s*(-?[\d.]+)?\s*\)/)
+        const tx = m ? parseFloat(m[1]) : 0
+        const ty = m && m[2] !== undefined ? parseFloat(m[2]) : 0
+
+        cx = tx + bbox.x - PAD
+        cy = ty + bbox.y - PAD
+        cw = bbox.width + PAD * 2
+        ch = bbox.height + PAD * 2
+      }
+    } catch { /* use full viewBox */ }
+  }
+
+  // Crop viewBox and resize
+  clone.setAttribute('viewBox', `${cx} ${cy} ${cw} ${ch}`)
+
+  // Calculate pixel dimensions from viewBox ratio
+  const exToPx = vbW > 0
+    ? parseFloat(clone.getAttribute('width')?.replace('ex', '') || '0') * 8 / vbW
+    : 1
+  const pxW = Math.max(1, Math.ceil(cw * exToPx))
+  const pxH = Math.max(1, Math.ceil(ch * exToPx))
+  clone.setAttribute('width', `${pxW}`)
+  clone.setAttribute('height', `${pxH}`)
+
+  // Capture cropped SVG
+  const dataUrl = await toPng(clone, {
     bgcolor: '#ffffff',
     scale: 2,
   })
 
-  // Clean up
-  container.innerHTML = ''
-
+  div.innerHTML = ''
   return dataUrl
 }
 
