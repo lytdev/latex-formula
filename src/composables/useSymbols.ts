@@ -34,24 +34,96 @@ const CATEGORIES: SymbolCategory[] = [
     key: 'functions',
     label: '常用函数',
     symbols: [
+      // ── 分式/根式 ──
       { label: '\\frac', latex: '\\frac{ }{ }' },
       { label: '\\sqrt', latex: '\\sqrt{ }' },
       { label: '\\sqrt[n]', latex: '\\sqrt[n]{ }' },
+      // ── 求和/求积/极限 ──
       { label: '\\sum', latex: '\\sum_{ }^{ }' },
+      { label: '\\prod', latex: '\\prod_{ }^{ }' },
+      { label: '\\lim', latex: '\\lim_{ \\to }' },
+      { label: '\\limsup', latex: '\\limsup_{n \\to \\infty}' },
+      { label: '\\liminf', latex: '\\liminf_{n \\to \\infty}' },
+      { label: '\\sup', latex: '\\sup_{ }' },
+      { label: '\\inf', latex: '\\inf_{ }' },
+      { label: '\\max', latex: '\\max_{ }' },
+      { label: '\\min', latex: '\\min_{ }' },
+      // ── 积分 ──
       { label: '\\int', latex: '\\int_{ }^{ }' },
       { label: '\\iint', latex: '\\iint_{ }^{ }' },
+      { label: '\\iiint', latex: '\\iiint_{ }^{ }' },
       { label: '\\oint', latex: '\\oint_{ }^{ }' },
-      { label: '\\lim', latex: '\\lim_{ \\to }' },
+      { label: '\\idotsint', latex: '\\idotsint ' },
+      // ── 对数/指数 ──
       { label: '\\log', latex: '\\log_{ }' },
       { label: '\\ln', latex: '\\ln ' },
+      { label: '\\lg', latex: '\\lg ' },
+      { label: '\\exp', latex: '\\exp( )' },
+      // ── 三角函数 ──
       { label: '\\sin', latex: '\\sin ' },
       { label: '\\cos', latex: '\\cos ' },
       { label: '\\tan', latex: '\\tan ' },
+      { label: '\\cot', latex: '\\cot ' },
+      { label: '\\sec', latex: '\\sec ' },
+      { label: '\\csc', latex: '\\csc ' },
+      // ── 反三角函数 ──
       { label: '\\arcsin', latex: '\\arcsin ' },
       { label: '\\arccos', latex: '\\arccos ' },
       { label: '\\arctan', latex: '\\arctan ' },
-      { label: '\\max', latex: '\\max ' },
-      { label: '\\min', latex: '\\min ' },
+      // ── 双曲函数 ──
+      { label: '\\sinh', latex: '\\sinh ' },
+      { label: '\\cosh', latex: '\\cosh ' },
+      { label: '\\tanh', latex: '\\tanh ' },
+      // ── 取整/取余 ──
+      { label: '\\lfloor', latex: '\\lfloor \\rfloor' },
+      { label: '\\lceil', latex: '\\lceil \\rceil' },
+      { label: '\\bmod', latex: '\\bmod ' },
+      // ── 模(绝对值/范数) ──
+      { label: '|x| 绝对值', latex: '\\lvert \\rvert' },
+      { label: '||x|| 范数', latex: '\\lVert \\rVert' },
+      // ── 上标/下标 ──
+      { label: '^上标', latex: '^{ }' },
+      { label: '_下标', latex: '_{ }' },
+      { label: '^_上下标', latex: '_{ }^{ }' },
+      // ── 定界符 ──
+      { label: '\\left(', latex: '\\left( \\right)' },
+      { label: '\\left[', latex: '\\left[ \\right]' },
+      { label: '\\left{', latex: '\\left\\{ \\right\\}' },
+      { label: '\\langle', latex: '\\langle \\rangle' },
+      { label: '分式', latex: '\\frac{ }{ }' },
+      // ── 数学修饰 ──
+      { label: '\\dot', latex: '\\dot{ }' },
+      { label: '\\ddot', latex: '\\ddot{ }' },
+      { label: '\\hat/\\widehat', latex: '\\hat{ } \\quad \\widehat{ }' },
+      { label: '\\tilde', latex: '\\tilde{ }' },
+      { label: '\\bar/\\overline', latex: '\\bar{ } \\quad \\overline{ }' },
+      { label: '\\underline', latex: '\\underline{ }' },
+      { label: '\\vec', latex: '\\vec{ }' },
+      { label: '\\prime 导数', latex: 'f^{\\prime}(x)' },
+      // ── 分段函数 ──
+      { label: 'cases 分段', latex: '\\begin{cases} \\\\ \\end{cases}' },
+      // ── 组合/二项式 ──
+      { label: '\\binom', latex: '\\binom{ }{ }' },
+      // ── 复数 ──
+      { label: '\\Re', latex: '\\Re(z)' },
+      { label: '\\Im', latex: '\\Im(z)' },
+      { label: '\\arg', latex: '\\arg(z)' },
+      // ── 期望/方差/概率 ──
+      { label: 'E期望', latex: '\\mathbb{E}[ ]' },
+      { label: 'P概率', latex: '\\mathbb{P}( )' },
+      { label: 'Var方差', latex: '\\operatorname{Var}( )' },
+      { label: 'Cov协方差', latex: '\\operatorname{Cov}( , )' },
+      // ── 特殊函数 ──
+      { label: '\\delta 狄拉克', latex: '\\delta( )' },
+      { label: 'H 阶跃', latex: 'H( )' },
+      { label: '\\Gamma', latex: '\\Gamma( )' },
+      { label: '\\det', latex: '\\det( )' },
+      { label: '\\tr 迹', latex: '\\operatorname{tr}( )' },
+      { label: '\\dim', latex: '\\dim ' },
+      { label: '\\ker', latex: '\\ker ' },
+      { label: '\\deg', latex: '\\deg ' },
+      { label: '\\gcd', latex: '\\gcd( , )' },
+      { label: '\\lcm', latex: '\\operatorname{lcm}( , )' },
     ],
   },
   {
