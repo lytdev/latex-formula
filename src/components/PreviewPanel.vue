@@ -18,11 +18,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, type Ref } from 'vue'
+import { ref, watch, onUnmounted, type Ref } from 'vue'
 import { useMathJax } from '../composables/useMathJax'
+import { svgToBase64 } from '../composables/useExport'
+import type { AgileLatexExport } from '../types'
 
 const props = defineProps<{
   latex: string
+}>()
+
+const emit = defineEmits<{
+  render: [result: AgileLatexExport]
 }>()
 
 const { render, isReady, ready } = useMathJax()
@@ -31,15 +37,20 @@ const previewContainer: Ref<HTMLElement | null> = ref(null)
 // Initialize MathJax on mount
 ready()
 
-function doRender(latexCode: string): void {
+async function doRender(latexCode: string): Promise<void> {
   if (!isReady.value || !previewContainer.value || !latexCode.trim()) return
 
-  const { svgElement } = render(latexCode, true)
+  const { svgElement, mathml } = render(latexCode, true)
   const container = previewContainer.value
 
   // Clear previous content and append new SVG
   container.innerHTML = ''
   container.appendChild(svgElement)
+
+  // Convert to base64 and emit the render event so the parent
+  // component can react each time the preview updates.
+  const base64 = await svgToBase64(svgElement)
+  emit('render', { latex: latexCode, mathml, base64 })
 }
 
 // Debounced render on latex change
@@ -58,6 +69,10 @@ watch(isReady, (ready) => {
   if (ready && props.latex.trim()) {
     doRender(props.latex)
   }
+})
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
 })
 </script>
 

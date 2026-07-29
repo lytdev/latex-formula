@@ -20,14 +20,13 @@
       </div>
       <div class="agile-latex__preview">
         <div class="agile-latex__label">实时预览</div>
-        <PreviewPanel :latex="modelValue" />
+        <PreviewPanel :latex="modelValue" @render="handlePreviewRender" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
@@ -72,6 +71,10 @@ async function doExport(): Promise<AgileLatexExport> {
   return await exportFormula(props.modelValue || '')
 }
 
+function handlePreviewRender(result: AgileLatexExport) {
+  emit('render', result)
+}
+
 // --- Exposed methods for parent component via template ref ---
 
 async function exposedExportFormula(): Promise<AgileLatexExport> {
@@ -81,9 +84,12 @@ async function exposedExportFormula(): Promise<AgileLatexExport> {
 }
 
 async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
+  // Update the model so the editor and eventual preview catch up.
   emit('update:modelValue', latex)
-  await nextTick()
-  const result = await doExport()
+  // Render and export immediately using the export pipeline (not the
+  // debounced preview path) so the caller gets a consistent result
+  // without a race condition.
+  const result = await exportFormula(latex)
   emit('render', result)
   return result
 }

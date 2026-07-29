@@ -20,6 +20,17 @@ export interface RenderResult {
   mathml: string
 }
 
+// ── Module-level singleton state ──
+// Only one MathJax instance is created across the application.
+// The first call to useMathJax().ready() initializes it; subsequent
+// calls to useMathJax() return the same shared refs and document.
+
+const isReady = ref(false)
+
+let doc: MathDocument<HTMLElement, Text, Document> | null = null
+let mmlVisitor: SerializedMmlVisitor | null = null
+let texInput: TeX<HTMLElement, Text, Document> | null = null
+
 /**
  * MathJax 3 initialization and rendering wrapper.
  *
@@ -32,13 +43,6 @@ export function useMathJax(): {
   ready: () => void
   isReady: Ref<boolean>
 } {
-  const isReady = ref(false)
-
-  // MathJax state — set during ready()
-  let doc: MathDocument<HTMLElement, Text, Document>
-  let mmlVisitor: SerializedMmlVisitor
-  let texInput: TeX<HTMLElement, Text, Document>
-
   /**
    * Initialize MathJax with TeX input (AllPackages including mhchem)
    * and SVG output. Must be called after the DOM is available.
@@ -77,7 +81,7 @@ export function useMathJax(): {
     // Create a MathItem for this expression
     const mathItem: MathItem<HTMLElement, Text, Document> = new HTMLMathItem(
       latex,
-      texInput,
+      texInput!,
       display,
     )
 
@@ -85,15 +89,22 @@ export function useMathJax(): {
     mathItem.setMetrics(16, 8, 80 * 16, 1000000, 1)
 
     // Compile LaTeX to MmlNode tree
-    mathItem.compile(doc)
+    mathItem.compile(doc!)
 
     // Serialize the MmlNode tree to a MathML string
     const mathml = mathItem.root
-      ? mmlVisitor.visitTree(mathItem.root)
+      ? mmlVisitor!.visitTree(mathItem.root)
       : '<math xmlns="http://www.w3.org/1998/Math/MathML"><merror><mtext>Parse error</mtext></merror></math>'
 
+    // If parsing failed (root is null), early-return with an empty SVG element.
+    // Do NOT call mathItem.typeset() — it would fail on a null root.
+    if (!mathItem.root) {
+      const errSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as SVGElement
+      return { svgElement: errSvg, mathml }
+    }
+
     // Typeset the MmlNode tree to SVG
-    mathItem.typeset(doc)
+    mathItem.typeset(doc!)
 
     const svgElement = mathItem.typesetRoot as unknown as SVGElement
 
