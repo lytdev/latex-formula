@@ -3,106 +3,111 @@ import type { AgileLatexExport } from '../types'
 import { Canvg } from 'canvg'
 
 const MAX_CANVAS_SIZE = 4096
-const CONTENT_PADDING_VB = 500 // padding in SVG viewBox units
+const PADDING_PX = 8
 
 /**
- * Get a hidden container for measuring SVG elements.
- * Created once, reused across exports.
+ * Scan canvas pixels to find the bounding box of actual content
+ * (any pixel darker than pure white).
  */
-let measureContainer: HTMLElement | null = null
-function getMeasureContainer(): HTMLElement {
-  if (!measureContainer) {
-    measureContainer = document.createElement('div')
-    measureContainer.style.cssText =
-      'position:fixed;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden;visibility:hidden;'
-    document.body.appendChild(measureContainer)
+function scanContentBounds(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+): { x: number; y: number; w: number; h: number } {
+  const imageData = ctx.getImageData(0, 0, w, h)
+  const d = imageData.data
+  let minX = w, minY = h, maxX = 0, maxY = 0
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4
+      // Treat any pixel that isn't near-white as content
+      if (d[i] < 248 || d[i + 1] < 248 || d[i + 2] < 248) {
+        if (x < minX) minX = x
+        if (y < minY) minY = y
+        if (x > maxX) maxX = x
+        if (y > maxY) maxY = y
+      }
+    }
   }
-  return measureContainer
+
+  if (minX > maxX) {
+    // No content found — return full image
+    return { x: 0, y: 0, w, h }
+  }
+
+  // Add padding, clamp to image bounds
+  const p = PADDING_PX
+  const x = Math.max(0, minX - p)
+  const y = Math.max(0, minY - p)
+  const cw = Math.min(w - x, maxX - minX + p * 2)
+  const ch = Math.min(h - y, maxY - minY + p * 2)
+  return { x, y, w: cw, h: ch }
 }
 
 /**
  * Convert an SVG element to a cropped base64 PNG.
- *
- * Strategy:
- * 1. Append SVG to hidden DOM container so browser lays it out
- * 2. Use getBBox() on content <g> for exact formula bounds
- * 3. Crop the SVG viewBox to match content bounds
- * 4. Render cropped SVG via canvg at 2x resolution
  */
 export async function svgToBase64(svgElement: Element): Promise<string> {
-  // Step 1: append to hidden DOM for layout
-  const container = getMeasureContainer()
   const clone = svgElement.cloneNode(true) as SVGElement
-  container.appendChild(clone)
 
-  // Step 2: get content bounding box in SVG coordinates
-  const viewBox = clone.getAttribute('viewBox')
-  const vbParts = viewBox?.split(/\s+/).map(Number) ?? []
-  const vbW = vbParts[2] || 12800
-  const vbH = vbParts[3] || 2000
+  // Get pixel dimensions from the SVG's ex-based width/height
+  const exW = parseFloat(clone.getAttribute('width')?.replace('ex', '') ?? '0') || 10
+  const exH = parseFloat(clone.getAttribute('height')?.replace('ex', '') ?? '0') || 2
+  const pxW = Math.ceil(exW * 8) // ex → px (em=16, ex=8)
+  const pxH = Math.ceil(exH * 8)
 
-  const contentG = clone.querySelector('g[data-mml-node="math"]') as SVGGraphicsElement | null
-  let cx = vbParts[0] ?? 0
-  let cy = vbParts[1] ?? 0
-  let cw = vbW
-  let ch = vbH
+  // Ensure explicit namespace
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
 
-  if (contentG) {
-    try {
-      const bbox = contentG.getBBox()
-      if (bbox.width > 0 && bbox.height > 0) {
-        // getBBox returns coords in the <g>'s LOCAL space.
-        // The <g> has transform="translate(tx, ty)" for centering —
-        // add that offset to get SVG-viewBox-space coordinates.
-        const xf = contentG.getAttribute('transform') || ''
-        const m = xf.match(/translate\(\s*(-?[\d.]+)\s*,?\s*(-?[\d.]+)?\s*\)/)
-        const tx = m ? parseFloat(m[1]) : 0
-        const ty = m && m[2] !== undefined ? parseFloat(m[2]) : 0
-
-        cx = tx + bbox.x - CONTENT_PADDING_VB
-        cy = ty + bbox.y - CONTENT_PADDING_VB
-        cw = bbox.width + CONTENT_PADDING_VB * 2
-        ch = bbox.height + CONTENT_PADDING_VB * 2
-      }
-    } catch {
-      // getBBox failed, use full viewBox
-    }
-  }
-
-  // Step 3: build cropped SVG string
-  clone.setAttribute('viewBox', `${cx} ${cy} ${cw} ${ch}`)
-  // Width/height in px: preserve aspect ratio, base on vb ratio
-  const vbRatio = (parseFloat(clone.getAttribute('width')?.replace('ex', '') ?? '0') || 120) / vbW
-  const pxW = Math.max(1, Math.ceil(cw * vbRatio))
-  const pxH = Math.max(1, Math.ceil(ch * vbRatio))
-  clone.setAttribute('width', `${pxW}`)
-  clone.setAttribute('height', `${pxH}`)
+  // Remove any background-color from the SVG (MathJax may add a gray bg)
+  clone.removeAttribute('style')
+  clone.querySelectorAll('[style]').forEach((el) => {
+    ;(el as HTMLElement).style.backgroundColor = ''
+    ;(el as HTMLElement).style.background = ''
+  })
 
   const svgString = new XMLSerializer().serializeToString(clone)
 
-  // Remove clone from DOM — no longer needed
-  container.removeChild(clone)
+  // Render at 1x to detect content bounds
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = pxW
+  tempCanvas.height = pxH
+  const tempCtx = tempCanvas.getContext('2d')
+  if (!tempCtx) throw new Error('Failed to get canvas 2d context')
 
-  // Step 4: render cropped SVG at 2x to canvas
-  const outW = Math.min(pxW * 2, MAX_CANVAS_SIZE)
-  const outH = Math.min(pxH * 2, MAX_CANVAS_SIZE)
+  tempCtx.fillStyle = '#ffffff'
+  tempCtx.fillRect(0, 0, pxW, pxH)
+
+  const v1 = Canvg.fromString(tempCtx, svgString)
+  await v1.render()
+
+  // Scan for actual content
+  const bounds = scanContentBounds(tempCtx, pxW, pxH)
+
+  if (bounds.w <= 2 || bounds.h <= 2) {
+    // Content too small — use full image
+    return tempCanvas.toDataURL('image/png')
+  }
+
+  // Render cropped region at 2x
+  const outW = Math.min(bounds.w * 2, MAX_CANVAS_SIZE)
+  const outH = Math.min(bounds.h * 2, MAX_CANVAS_SIZE)
 
   const canvas = document.createElement('canvas')
   canvas.width = outW
   canvas.height = outH
-
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Failed to get canvas 2d context')
 
+  // Draw cropped region from temp canvas, scaled 2x
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, outW, outH)
-
-  const v = Canvg.fromString(ctx, svgString, {
-    ignoreDimensions: true,
-    scaleWidth: outW,
-    scaleHeight: outH,
-  })
-  await v.render()
+  ctx.drawImage(
+    tempCanvas,
+    bounds.x, bounds.y, bounds.w, bounds.h,
+    0, 0, outW, outH,
+  )
 
   return canvas.toDataURL('image/png')
 }
