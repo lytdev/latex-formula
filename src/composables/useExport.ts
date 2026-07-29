@@ -2,32 +2,25 @@ import { useMathJax } from './useMathJax'
 import type { AgileLatexExport } from '../types'
 import { snapdom } from '@zumer/snapdom'
 
-const CAPTURE_WIDTH = 800
-
 /**
  * Convert a LaTeX formula SVG to a base64 PNG via @zumer/snapdom.
+ *
+ * Renders the SVG in a fully visible DOM container so the browser
+ * completes layout, then captures with snapdom.
  */
 export async function svgToBase64(svgElement: Element): Promise<string> {
+  // Create a visible container — no opacity:0, let it auto-size to content
   const container = document.createElement('div')
-  container.style.cssText = `
-    position:fixed;left:0;top:0;
-    width:${CAPTURE_WIDTH}px;
-    font-size:16px;
-    opacity:0;pointer-events:none;
-  `
+  container.style.cssText =
+    'position:fixed;left:-9999px;top:0;font-size:16px;'
 
   const clone = svgElement.cloneNode(true) as SVGElement
   clone.removeAttribute('style')
-
-  // Let CSS control the display size: SVG fills container width,
-  // height auto-calculates from the viewBox aspect ratio.
-  clone.style.width = '100%'
-  clone.style.height = 'auto'
-
   container.appendChild(clone)
   document.body.appendChild(container)
 
-  const canvas = await snapdom.toCanvas(clone, {
+  // Capture the entire container (not just the SVG)
+  const canvas = await snapdom.toCanvas(container, {
     scale: 2,
     backgroundColor: '#ffffff',
   })
