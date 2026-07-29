@@ -1,18 +1,13 @@
 import { useMathJax } from './useMathJax'
 import type { AgileLatexExport } from '../types'
-import html2canvas from 'html2canvas'
+import { snapdom } from '@zumer/snapdom'
 
 const PAD_PX = 16
 
 let measureDiv: HTMLDivElement | null = null
 
 /**
- * Convert a LaTeX formula to a base64 PNG.
- *
- * 1. Render SVG via MathJax
- * 2. Measure content bounds from DOM layout
- * 3. Crop via CSS overflow:hidden wrapper
- * 4. Capture with html2canvas
+ * Convert a LaTeX formula SVG to a cropped base64 PNG via @zumer/snapdom.
  */
 export async function svgToBase64(svgElement: Element): Promise<string> {
   if (!measureDiv) {
@@ -31,14 +26,14 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   const svgPxW = svgRect.width
   const svgPxH = svgRect.height
 
-  // Map SVG units → pixels
+  // Map SVG units → pixels via viewBox
   const vb = clone.getAttribute('viewBox')?.split(/\s+/).map(Number) ?? [0, 0, 1, 1]
   const vbW = vb[2] || 1
   const vbH = vb[3] || 1
   const u2pxX = svgPxW / vbW
   const u2pxY = svgPxH / vbH
 
-  // Find formula content bounds in SVG units
+  // Get formula content bounds (getBBox + translate offset)
   const contentG = clone.querySelector('g[data-mml-node="math"]') as SVGGraphicsElement | null
   let cx = vb[0] ?? 0, cy = vb[1] ?? 0, cw = vbW, ch = vbH
 
@@ -53,17 +48,17 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
         cw = bb.width
         ch = bb.height
       }
-    } catch { /* use full viewBox */ }
+    } catch { /* fallback: full viewBox */ }
   }
 
-  // Content bounds in pixels, with padding
+  // Content bounds → pixel coordinates with padding
   const pad = PAD_PX
   const cropX = Math.max(0, Math.floor(cx * u2pxX - pad))
   const cropY = Math.max(0, Math.floor(cy * u2pxY - pad))
   const cropW = Math.min(Math.ceil(svgPxW - cropX), Math.ceil(cw * u2pxX + pad * 2))
   const cropH = Math.min(Math.ceil(svgPxH - cropY), Math.ceil(ch * u2pxY + pad * 2))
 
-  // Build cropped capture element
+  // Build cropped wrapper
   const captureSvg = svgElement.cloneNode(true) as SVGElement
   captureSvg.setAttribute('width', `${svgPxW}`)
   captureSvg.setAttribute('height', `${svgPxH}`)
@@ -77,11 +72,10 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   measureDiv.innerHTML = ''
   measureDiv.appendChild(wrapper)
 
-  const canvas = await html2canvas(wrapper, {
-    backgroundColor: '#ffffff',
+  // Capture with snapdom
+  const canvas = await snapdom.toCanvas(wrapper, {
     scale: 2,
-    useCORS: true,
-    logging: false,
+    backgroundColor: '#ffffff',
   })
 
   measureDiv.innerHTML = ''
