@@ -10,33 +10,44 @@ import { HTMLMathItem } from 'mathjax-full/js/handlers/html/HTMLMathItem.js'
 import type { MathDocument } from 'mathjax-full/js/core/MathDocument.js'
 import type { MathItem } from 'mathjax-full/js/core/MathItem.js'
 
-/**
- * Result of rendering a LaTeX expression.
- */
+/** 单次渲染的结果：SVG 元素 + MathML 字符串 */
 export interface RenderResult {
-  /** The rendered SVG element. */
+  /** 渲染后的 SVG 元素 */
   svgElement: SVGElement
-  /** The serialized MathML string. */
+  /** 序列化后的 MathML 字符串 */
   mathml: string
 }
 
-// ── Module-level singleton state ──
-// Only one MathJax instance is created across the application.
-// The first call to useMathJax().ready() initializes it; subsequent
-// calls to useMathJax() return the same shared refs and document.
+// ═══════════════════════════════════════════════════════════
+// 模块级单例状态
+// 整个应用只创建一个 MathJax 实例。首次调用 useMathJax().ready()
+// 完成初始化，后续调用返回共享的 ref 和 document。
+// ═══════════════════════════════════════════════════════════
 
+/** MathJax 是否已初始化 */
 const isReady = ref(false)
 
+/** MathJax 文档对象（TeX 输入 → SVG 输出） */
 let doc: MathDocument<HTMLElement, Text, Document> | null = null
+
+/** MathML 序列化访问器 */
 let mmlVisitor: SerializedMmlVisitor | null = null
+
+/** TeX 输入处理器（含 AllPackages） */
 let texInput: TeX<HTMLElement, Text, Document> | null = null
 
 /**
- * MathJax 3 initialization and rendering wrapper.
+ * MathJax 3 初始化与渲染封装。
  *
- * Call `ready()` on component mount to initialize MathJax
- * (requires DOM). Then use `render(latex, display?)` to convert
- * LaTeX to SVG + MathML.
+ * 使用方式：
+ *   1. 组件挂载时调用 ready() 初始化（需要 DOM 存在）
+ *   2. 之后调用 render(latex, display?) 将 LaTeX 转为 SVG + MathML
+ *
+ * 关键设计决策：
+ *   - fontCache: 'none' — 字形直接内联到每个 SVG 中，使每个 SVG 自包含、
+ *     可独立序列化为图片（用于导出 PNG）
+ *   - AllPackages — 包含 mhchem（化学公式）、AMSmath 等所有标准宏包
+ *   - display 模式 — 公式居中、大号渲染，适合预览和导出
  */
 export function useMathJax(): {
   render: (latex: string, display?: boolean) => RenderResult
@@ -44,18 +55,23 @@ export function useMathJax(): {
   isReady: Ref<boolean>
 } {
   /**
-   * Initialize MathJax with TeX input (AllPackages including mhchem)
-   * and SVG output. Must be called after the DOM is available.
+   * 初始化 MathJax。
+   * 幂等调用 — 重复调用时 if (isReady.value) return 直接跳过。
+   * 必须在 DOM 可用后调用（即组件 onMounted 之后）。
    */
   function ready(): void {
     if (isReady.value) return
 
+    // 设置浏览器 DOM 适配器
     const adaptor = browserAdaptor()
     RegisterHTMLHandler(adaptor)
 
+    // TeX 输入处理器 — AllPackages 包含 mhchem、AMSmath 等
     texInput = new TeX({ packages: AllPackages })
+    // SVG 输出 — fontCache: 'none' 确保每个公式自包含
     const svgOutput = new SVG({ fontCache: 'none' })
 
+    // 创建 MathJax 文档对象
     doc = mathjax.document(document, {
       InputJax: texInput,
       OutputJax: svgOutput,
@@ -67,43 +83,42 @@ export function useMathJax(): {
   }
 
   /**
-   * Render LaTeX to an SVG element and MathML string.
+   * 将 LaTeX 字符串渲染为 SVG 和 MathML。
    *
-   * @param latex   - The LaTeX expression (e.g. `\\frac{a}{b}`).
-   * @param display - Whether to render in display math mode (default `true`).
-   * @returns An object with `svgElement` (SVGElement) and `mathml` (string).
+   * @param latex   - LaTeX 表达式，如 `\\frac{a}{b}`、`\\ce{H2O}`
+   * @param display - 是否使用展示模式（居中、大号），默认 true
+   * @returns { svgElement: SVG 元素, mathml: MathML 字符串 }
    */
   function render(latex: string, display = true): RenderResult {
     if (!isReady.value) {
-      throw new Error('MathJax is not ready. Call useMathJax().ready() first.')
+      throw new Error('MathJax 未初始化，请先调用 useMathJax().ready()')
     }
 
-    // Create a MathItem for this expression
+    // 为本次渲染创建 MathItem
     const mathItem: MathItem<HTMLElement, Text, Document> = new HTMLMathItem(
       latex,
       texInput!,
       display,
     )
 
-    // Set metrics for proper rendering
+    // 设置字体度量参数：em=16px, ex=8px, containerWidth=1280px
     mathItem.setMetrics(16, 8, 80 * 16, 1000000, 1)
 
-    // Compile LaTeX to MmlNode tree
+    // 第一步：编译 LaTeX → MmlNode 语法树
     mathItem.compile(doc!)
 
-    // Serialize the MmlNode tree to a MathML string
+    // 第二步：将语法树序列化为 MathML 字符串
     const mathml = mathItem.root
       ? mmlVisitor!.visitTree(mathItem.root)
       : '<math xmlns="http://www.w3.org/1998/Math/MathML"><merror><mtext>Parse error</mtext></merror></math>'
 
-    // If parsing failed (root is null), early-return with an empty SVG element.
-    // Do NOT call mathItem.typeset() — it would fail on a null root.
+    // 如果解析失败（root 为 null），提前返回空 SVG + 错误 MathML
     if (!mathItem.root) {
       const errSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as SVGElement
       return { svgElement: errSvg, mathml }
     }
 
-    // Typeset the MmlNode tree to SVG
+    // 第三步：将语法树渲染为 SVG 元素
     mathItem.typeset(doc!)
 
     const svgElement = mathItem.typesetRoot as unknown as SVGElement

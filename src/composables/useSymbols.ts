@@ -1,9 +1,23 @@
+/**
+ * 符号面板数据模块。
+ *
+ * 定义 8 个分类共 300+ 条 LaTeX 公式和符号的预置数据，
+ * 涵盖大学数学（分析、代数、概率统计等）和化学。
+ *
+ * 数据分为两部分：
+ *   1. 希腊字母 — 由数组自动生成（避免手写 34 条重复项）
+ *   2. CATEGORIES — 手动维护的 8 个分类
+ */
 import { computed, type ComputedRef } from 'vue'
 import type { SymbolItem } from '../types'
 
+/** 符号分类 */
 export interface SymbolCategory {
+  /** 分类唯一标识（用于 Tab 切换） */
   key: string
+  /** 分类中文名称 */
   label: string
+  /** 该分类下的符号列表 */
   symbols: SymbolItem[]
 }
 
@@ -23,6 +37,7 @@ const GREEK_UPPERCASE: [string, string][] = [
   ['Ω Omega', 'Omega'],
 ]
 
+/** 由常量数组自动生成 34 个希腊字母符号（小写 24 + 大写 10） */
 function greekSymbols(): SymbolItem[] {
   const lower: SymbolItem[] = GREEK_LOWERCASE.map(([label, name]) => ({
     label,
@@ -41,95 +56,95 @@ const CATEGORIES: SymbolCategory[] = [
     label: '常用函数',
     symbols: [
       // ── 分式/根式 ──
-      { label: '分式 \\frac', latex: '\\frac{ }{ }' },
-      { label: '平方根 \\sqrt', latex: '\\sqrt{ }' },
-      { label: 'n次根 \\sqrt[n]', latex: '\\sqrt[n]{ }' },
+      { label: '分式', latex: '\\frac{ }{ }' },
+      { label: '平方根', latex: '\\sqrt{ }' },
+      { label: 'n次根', latex: '\\sqrt[n]{ }' },
       // ── 求和/求积/极限 ──
-      { label: '求和 \\sum', latex: '\\sum_{ }^{ }' },
-      { label: '求积 \\prod', latex: '\\prod_{ }^{ }' },
-      { label: '极限 \\lim', latex: '\\lim_{ \\to }' },
-      { label: '上极限 \\limsup', latex: '\\limsup_{n \\to \\infty}' },
-      { label: '下极限 \\liminf', latex: '\\liminf_{n \\to \\infty}' },
-      { label: '上确界 \\sup', latex: '\\sup_{ }' },
-      { label: '下确界 \\inf', latex: '\\inf_{ }' },
-      { label: '最大值 \\max', latex: '\\max_{ }' },
-      { label: '最小值 \\min', latex: '\\min_{ }' },
+      { label: '求和 ', latex: '\\sum_{ }^{ }' },
+      { label: '求积', latex: '\\prod_{ }^{ }' },
+      { label: '极限', latex: '\\lim_{ \\to }' },
+      { label: '上极限', latex: '\\limsup_{n \\to \\infty}' },
+      { label: '下极限', latex: '\\liminf_{n \\to \\infty}' },
+      { label: '上确界', latex: '\\sup_{ }' },
+      { label: '下确界', latex: '\\inf_{ }' },
+      { label: '最大值', latex: '\\max_{ }' },
+      { label: '最小值', latex: '\\min_{ }' },
       // ── 积分 ──
-      { label: '不定积分 \\int', latex: '\\int_{ }^{ }' },
-      { label: '二重积分 \\iint', latex: '\\iint_{ }^{ }' },
-      { label: '三重积分 \\iiint', latex: '\\iiint_{ }^{ }' },
-      { label: '环路积分 \\oint', latex: '\\oint_{ }^{ }' },
-      { label: '多重积分 \\idotsint', latex: '\\idotsint ' },
+      { label: '不定积分', latex: '\\int_{ }^{ }' },
+      { label: '二重积分', latex: '\\iint_{ }^{ }' },
+      { label: '三重积分', latex: '\\iiint_{ }^{ }' },
+      { label: '环路积分 ', latex: '\\oint_{ }^{ }' },
+      { label: '多重积分', latex: '\\idotsint ' },
       // ── 对数/指数 ──
-      { label: '对数 \\log', latex: '\\log_{ }' },
-      { label: '自然对数 \\ln', latex: '\\ln ' },
-      { label: '常用对数 \\lg', latex: '\\lg ' },
-      { label: '指数函数 \\exp', latex: '\\exp( )' },
+      { label: '对数', latex: '\\log_{ }' },
+      { label: '自然对数', latex: '\\ln ' },
+      { label: '常用对数', latex: '\\lg ' },
+      { label: '指数函数', latex: '\\exp( )' },
       // ── 三角函数 ──
-      { label: '正弦 \\sin', latex: '\\sin ' },
-      { label: '余弦 \\cos', latex: '\\cos ' },
-      { label: '正切 \\tan', latex: '\\tan ' },
-      { label: '余切 \\cot', latex: '\\cot ' },
-      { label: '正割 \\sec', latex: '\\sec ' },
-      { label: '余割 \\csc', latex: '\\csc ' },
+      { label: '正弦', latex: '\\sin ' },
+      { label: '余弦', latex: '\\cos ' },
+      { label: '正切', latex: '\\tan ' },
+      { label: '余切', latex: '\\cot ' },
+      { label: '正割', latex: '\\sec ' },
+      { label: '余割', latex: '\\csc ' },
       // ── 反三角函数 ──
-      { label: '反正弦 \\arcsin', latex: '\\arcsin ' },
-      { label: '反余弦 \\arccos', latex: '\\arccos ' },
-      { label: '反正切 \\arctan', latex: '\\arctan ' },
+      { label: '反正弦', latex: '\\arcsin ' },
+      { label: '反余弦', latex: '\\arccos ' },
+      { label: '反正切', latex: '\\arctan ' },
       // ── 双曲函数 ──
-      { label: '双曲正弦 \\sinh', latex: '\\sinh ' },
-      { label: '双曲余弦 \\cosh', latex: '\\cosh ' },
-      { label: '双曲正切 \\tanh', latex: '\\tanh ' },
+      { label: '双曲正弦', latex: '\\sinh ' },
+      { label: '双曲余弦', latex: '\\cosh ' },
+      { label: '双曲正切', latex: '\\tanh ' },
       // ── 取整/取余 ──
-      { label: '向下取整 \\lfloor', latex: '\\lfloor \\rfloor' },
-      { label: '向上取整 \\lceil', latex: '\\lceil \\rceil' },
-      { label: '取模 \\bmod', latex: '\\bmod ' },
+      { label: '向下取整', latex: '\\lfloor \\rfloor' },
+      { label: '向上取整', latex: '\\lceil \\rceil' },
+      { label: '取模', latex: '\\bmod ' },
       // ── 模(绝对值/范数) ──
-      { label: '绝对值 \\lvert', latex: '\\lvert \\rvert' },
-      { label: '范数 \\lVert', latex: '\\lVert \\rVert' },
+      { label: '绝对值', latex: '\\lvert \\rvert' },
+      { label: '范数', latex: '\\lVert \\rVert' },
       // ── 上标/下标 ──
       { label: '上标', latex: '^{ }' },
       { label: '下标', latex: '_{ }' },
       { label: '上下标', latex: '_{ }^{ }' },
       // ── 定界符 ──
-      { label: '圆括号 \\left(', latex: '\\left( \\right)' },
-      { label: '方括号 \\left[', latex: '\\left[ \\right]' },
-      { label: '花括号 \\left\\{', latex: '\\left\\{ \\right\\}' },
-      { label: '尖括号 \\langle', latex: '\\langle \\rangle' },
+      { label: '圆括号', latex: '\\left( \\right)' },
+      { label: '方括号', latex: '\\left[ \\right]' },
+      { label: '花括号', latex: '\\left\\{ \\right\\}' },
+      { label: '尖括号', latex: '\\langle \\rangle' },
       { label: '分式', latex: '\\frac{ }{ }' },
       // ── 数学修饰 ──
-      { label: '一阶导 \\dot', latex: '\\dot{ }' },
-      { label: '二阶导 \\ddot', latex: '\\ddot{ }' },
-      { label: '帽子 \\hat', latex: '\\hat{ } \\quad \\widehat{ }' },
-      { label: '波浪 \\tilde', latex: '\\tilde{ }' },
-      { label: '上划线 \\overline', latex: '\\bar{ } \\quad \\overline{ }' },
-      { label: '下划线 \\underline', latex: '\\underline{ }' },
-      { label: '向量 \\vec', latex: '\\vec{ }' },
-      { label: '导函数 \\prime', latex: 'f^{\\prime}(x)' },
+      { label: '一阶导', latex: '\\dot{ }' },
+      { label: '二阶导', latex: '\\ddot{ }' },
+      { label: '帽子', latex: '\\hat{ } \\quad \\widehat{ }' },
+      { label: '波浪', latex: '\\tilde{ }' },
+      { label: '上划线', latex: '\\bar{ } \\quad \\overline{ }' },
+      { label: '下划线', latex: '\\underline{ }' },
+      { label: '向量', latex: '\\vec{ }' },
+      { label: '导函数', latex: 'f^{\\prime}(x)' },
       // ── 分段函数 ──
-      { label: '分段函数 cases', latex: '\\begin{cases} \\\\ \\end{cases}' },
+      { label: '分段函数', latex: '\\begin{cases} \\\\ \\end{cases}' },
       // ── 组合/二项式 ──
-      { label: '组合数 \\binom', latex: '\\binom{ }{ }' },
+      { label: '组合数', latex: '\\binom{ }{ }' },
       // ── 复数 ──
-      { label: '实部 \\Re', latex: '\\Re(z)' },
-      { label: '虚部 \\Im', latex: '\\Im(z)' },
-      { label: '辐角 \\arg', latex: '\\arg(z)' },
+      { label: '实部', latex: '\\Re(z)' },
+      { label: '虚部', latex: '\\Im(z)' },
+      { label: '辐角', latex: '\\arg(z)' },
       // ── 期望/方差/概率 ──
-      { label: '期望 \\mathbb{E}', latex: '\\mathbb{E}[ ]' },
-      { label: '概率 \\mathbb{P}', latex: '\\mathbb{P}( )' },
-      { label: '方差 Var', latex: '\\operatorname{Var}( )' },
-      { label: '协方差 Cov', latex: '\\operatorname{Cov}( , )' },
+      { label: '期望', latex: '\\mathbb{E}[ ]' },
+      { label: '概率', latex: '\\mathbb{P}( )' },
+      { label: '方差', latex: '\\operatorname{Var}( )' },
+      { label: '协方差', latex: '\\operatorname{Cov}( , )' },
       // ── 特殊函数 ──
       { label: '狄拉克δ', latex: '\\delta( )' },
-      { label: '阶跃函数 H', latex: 'H( )' },
-      { label: 'Gamma函数 \\Gamma', latex: '\\Gamma( )' },
-      { label: '行列式 \\det', latex: '\\det( )' },
-      { label: '迹 \\tr', latex: '\\operatorname{tr}( )' },
-      { label: '维数 \\dim', latex: '\\dim ' },
-      { label: '核 \\ker', latex: '\\ker ' },
-      { label: '度数 \\deg', latex: '\\deg ' },
-      { label: '最大公约 \\gcd', latex: '\\gcd( , )' },
-      { label: '最小公倍 \\lcm', latex: '\\operatorname{lcm}( , )' },
+      { label: '阶跃函数', latex: 'H( )' },
+      { label: 'Gamma函数', latex: '\\Gamma( )' },
+      { label: '行列式', latex: '\\det( )' },
+      { label: '迹', latex: '\\operatorname{tr}( )' },
+      { label: '维数', latex: '\\dim ' },
+      { label: '核', latex: '\\ker ' },
+      { label: '度数', latex: '\\deg ' },
+      { label: '最大公约', latex: '\\gcd( , )' },
+      { label: '最小公倍', latex: '\\operatorname{lcm}( , )' },
     ],
   },
   {
@@ -426,6 +441,10 @@ const CATEGORIES: SymbolCategory[] = [
   },
 ]
 
+/**
+ * 符号数据的组合式函数。
+ * 返回一个响应式的 categories 数组，供 SymbolPanel 渲染。
+ */
 export function useSymbols(): { categories: ComputedRef<SymbolCategory[]> } {
   const categories = computed(() => CATEGORIES)
   return { categories }
