@@ -2,10 +2,19 @@
   "name": "agile-latex-formula",
   "version": "0.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lytdev/agile-latex-formula.git"
+  },
+  "license": "MIT",
+  "author": "lytdev <lytdev@outlook.com>",
   "type": "module",
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "main": "./dist/agile-latex-formula.cjs",
   "module": "./dist/agile-latex-formula.mjs",
   "types": "./dist/index.d.ts",
@@ -47,7 +56,6 @@
     "math",
     "formula"
   ],
-  "license": "MIT",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
