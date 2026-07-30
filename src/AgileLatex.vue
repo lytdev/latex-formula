@@ -3,52 +3,26 @@
     <div class="agile-latex__top">
       <SymbolPanel @insert="handleInsert" />
     </div>
-    <div class="agile-latex__toolbar">
-      <t-button
-        size="small"
-        variant="text"
-        :disabled="!canUndo"
-        title="撤销 (Ctrl+Z)"
-        @click="undo"
-      >↩ 撤销</t-button>
-      <t-button
-        size="small"
-        variant="text"
-        :disabled="!canRedo"
-        title="恢复 (Ctrl+Shift+Z)"
-        @click="redo"
-      >↪ 恢复</t-button>
-      <span class="toolbar-sep" />
-      <span class="agile-latex__label">颜色</span>
-      <button
-        v-for="c in presetColors"
-        :key="c"
-        class="color-btn"
-        :style="{ backgroundColor: c }"
-        :title="c"
-        @click="applyColor(c)"
-      />
-      <button
-        class="color-btn color-btn--none"
-        title="自定义颜色"
-        @click="pickCustomColor"
-      >+</button>
-    </div>
     <div class="agile-latex__bottom">
       <div class="agile-latex__input">
         <div class="agile-latex__input-header">
           <span class="agile-latex__label">LaTeX 输入</span>
+          <div class="agile-latex__toolbar">
+            <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">↩ 撤销</t-button>
+            <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">↪
+              恢复</t-button>
+            <span class="toolbar-sep" />
+            <span class="agile-latex__label">颜色</span>
+            <button v-for="c in presetColors" :key="c" class="color-btn" :style="{ backgroundColor: c }" :title="c"
+              @click="applyColor(c)" />
+            <button class="color-btn color-btn--none" title="自定义颜色" @click="pickCustomColor">+</button>
+          </div>
           <t-button size="small" theme="primary" @click="handleExport">
             导出
           </t-button>
         </div>
-        <LatexInput
-          ref="latexInputRef"
-          :model-value="modelValue"
-          :placeholder="placeholder"
-          :readonly="readonly"
-          @update:model-value="handleInput"
-        />
+        <LatexInput ref="latexInputRef" :model-value="modelValue" :placeholder="placeholder" :readonly="readonly"
+          @update:model-value="handleInput" />
       </div>
       <div class="agile-latex__preview">
         <div class="agile-latex__label">实时预览</div>
@@ -92,18 +66,14 @@ const future = ref<string[]>([])
 const canUndo = computed(() => history.value.length > 0)
 const canRedo = computed(() => future.value.length > 0)
 
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-
-function saveToHistory() {
-  if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    if (history.value.length >= MAX_HISTORY) {
-      history.value.shift()
-    }
-    history.value.push(props.modelValue)
-    // Any new typing after an undo clears the redo stack
-    future.value = []
-  }, 500)
+function pushHistory(value: string) {
+  const last = history.value[history.value.length - 1]
+  if (last === value) return // skip duplicates
+  if (history.value.length >= MAX_HISTORY) {
+    history.value.shift()
+  }
+  history.value.push(value)
+  future.value = []
 }
 
 function undo() {
@@ -141,9 +111,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
 
 // ── 字体颜色 ──
 const presetColors = [
-  '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
-  '#1abc9c', '#3498db', '#9b59b6', '#e91e63',
-  '#ff5722', '#795548', '#607d8b', '#000000',
+  '#e74c3c', '#f1c40f', '#1abc9c', '#3498db', '#e91e63',
+  '#ff5722',
 ]
 
 function insertAtCursor(before: string, after: string, placeholder: string) {
@@ -190,12 +159,12 @@ function pickCustomColor() {
 }
 
 function handleInput(value: string) {
-  saveToHistory()
+  pushHistory(props.modelValue)
   emit('update:modelValue', value)
 }
 
 function handleInsert(latex: string) {
-  saveToHistory()
+  pushHistory(props.modelValue)
   const newValue = props.modelValue + latex
   emit('update:modelValue', newValue)
 }
@@ -255,8 +224,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--td-component-border);
+  padding: 0 12px;
   background: var(--td-bg-color-secondarycontainer);
 }
 
@@ -276,6 +244,7 @@ defineExpose({
   padding: 0;
   transition: transform 0.15s;
 }
+
 .color-btn:hover {
   transform: scale(1.2);
   border-color: rgba(255, 255, 255, 0.5);
