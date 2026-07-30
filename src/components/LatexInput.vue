@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
+import { Textarea as TTextarea } from 'tdesign-vue-next'
 
 /** 接收父组件通过 v-model 传入的 LaTeX 文本 */
 defineProps<{
@@ -47,8 +48,8 @@ function getNativeTextarea(): HTMLTextAreaElement | null {
 defineExpose({ getNativeTextarea })
 
 /** 输入变化 → 通知父组件更新 modelValue */
-function onInput(value: string) {
-  emit('update:modelValue', value)
+function onInput(value: string | number) {
+  emit('update:modelValue', String(value))
 }
 </script>
 

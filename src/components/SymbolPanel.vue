@@ -34,6 +34,7 @@
 import { ref, computed } from 'vue'
 import { useSymbols } from '../composables/useSymbols'
 import { SearchIcon } from 'tdesign-icons-vue-next'
+import { Tabs as TTabs, TabPanel as TTabPanel, Input as TInput, Button as TButton, Empty as TEmpty } from 'tdesign-vue-next'
 
 /** 向父组件（AgileLatex）emit 需要插入的 LaTeX 代码片段 */
 const emit = defineEmits<{
@@ -88,8 +89,8 @@ function onSymbolClick(latex: string) {
 }
 
 .symbol-panel-search {
-  padding: 4px;
-  width: 250px;
+  padding: 8px 0 0 8px;
+  width: 350px;
 }
 
 /* 符号网格 — flex-wrap 自动换行，内容超出时垂直滚动 */

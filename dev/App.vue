@@ -1,9 +1,11 @@
 <template>
   <div class="playground">
-    <t-button @click="exportData">导出数据</t-button>
-    <div class="editor-wrapper">
-      <AgileLatex ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
-    </div>
+    <t-button @click="latexDialogVisible=true">呈现LaTex公式编辑器</t-button>
+    <t-dialog v-model:visible="latexDialogVisible" :cancelBtn="null" :confirmBtn="null" width="80%" top="5%">
+      <div class="editor-container">
+        <AgileLatex ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
+      </div>
+    </t-dialog>
     <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" :confirmBtn="null" width="80%">
       <div class="preview-container">
         <img :src="lastResult?.base64">
@@ -14,10 +16,12 @@
 
 <script setup lang="ts">
 import { ref,useTemplateRef } from 'vue'
+import { Button as TButton} from 'tdesign-vue-next'
 import { AgileLatex, type AgileLatexExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)
 const lastResult = ref<AgileLatexExport | null>(null)
+const latexDialogVisible = ref(false)
 const dialogVisible = ref(false)
 const editorRef =useTemplateRef('editorRef')
 const exportData = async () => {
@@ -49,10 +53,11 @@ body {
   flex-direction: column;
   gap: 16px;
 }
-
-.editor-wrapper {
-  flex: 1;
-  min-height: 0;
+.editor-container{
+  height: 720px;
+}
+.t-dialog__footer{
+  padding: 0;
 }
 
 .export-img {

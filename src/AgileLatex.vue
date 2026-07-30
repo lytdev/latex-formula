@@ -12,12 +12,12 @@
           <span class="agile-latex-formula__label">LaTeX 输入</span>
           <div class="agile-latex-formula__toolbar" @mousedown="snapSelection">
             <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">
-              <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
-                :stroke-width="2.5" />
+              <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
+                :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
             </t-button>
             <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">
-              <rollfront-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
-                :stroke-width="2.5" />
+              <rollfront-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
+                :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
             </t-button>
             <t-button size="small" variant="text" @click="clearInput">
               <clear-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
@@ -67,17 +67,30 @@
       <div class="agile-latex-formula__preview">
         <div class="latex__preview-header">
           <span class="agile-latex-formula__label">实时预览</span>
-          <t-button size="small" theme="primary" @click="handleExport">
-            <template #icon>
-              <export-icon :fill-color='["#bbd3fb", "#f78d94"]' :stroke-color='["currentColor", "#ecf2fe"]'
-                :stroke-width="2.5" />
-            </template>
-            导出
-          </t-button>
+          <div class="latex__preview-action">
+            <t-button size="small" theme="primary" @click="handlePreview" :disabled="!modelValue">
+              <template #icon>
+                <camera-1-icon :fill-color='"transparent"' :stroke-color='"#ffffff"' :stroke-width="2.5" />
+              </template>
+              预览
+            </t-button>
+            <t-button size="small" theme="primary" @click="handleExport" :disabled="!modelValue">
+              <template #icon>
+                <export-icon :fill-color='["#bbd3fb", "#f78d94"]' :stroke-color='["currentColor", "#ecf2fe"]'
+                  :stroke-width="2.5" />
+              </template>
+              导出
+            </t-button>
+          </div>
         </div>
         <PreviewPanel :latex="modelValue" />
       </div>
     </div>
+    <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" confirmBtn="下载" width="80%" :onConfirm="downloadLatex">
+      <div class="preview-container">
+        <img :src="lastResult?.base64">
+      </div>
+    </t-dialog>
   </div>
 </template>
 
@@ -88,7 +101,8 @@ import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
 import type { AgileLatexExport } from './types'
-import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon, ExportIcon } from 'tdesign-icons-vue-next'
+import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon, ExportIcon, Camera1Icon } from 'tdesign-icons-vue-next'
+import { Button as TButton, Dropdown as TDropdown, DropdownMenu as TDropdownMenu, DropdownItem as TDropdownItem, ColorPicker as TColorPicker } from 'tdesign-vue-next'
 
 /**
  * 组件 Props — 通过 v-model 绑定 LaTeX 代码
@@ -101,6 +115,17 @@ const props = withDefaults(defineProps<{
   modelValue: '',
   placeholder: '输入 LaTeX 公式...',
   readonly: false,
+})
+
+const dialogVisible = ref(false)
+
+
+const lastResult = ref<AgileLatexExport>({
+  latex: '',
+  /** MathML 格式的公式表示 */
+  mathml: '',
+  /** Base64 编码的 PNG 图片（data:image/png;base64,...） */
+  base64: ''
 })
 
 /**
@@ -355,6 +380,41 @@ async function handleExport() {
   emit('render', result)
 }
 
+async function handlePreview() {
+  const result = await doExport()
+  dialogVisible.value = true
+  lastResult.value = result
+}
+/** 将 lastResult.base64 转为 Blob 并触发客户端下载 */
+const downloadLatex = () => {
+  const base64 = lastResult.value.base64
+  if (!base64) return
+
+  // base64 格式: data:image/png;base64,xxxx
+  const parts = base64.split(',')
+  if (parts.length < 2) return
+
+  const byteString = atob(parts[1])
+  const mimeType = parts[0].match(/:(.*?);/)?.[1] || 'image/png'
+
+  const ab = new ArrayBuffer(byteString.length)
+  const ia = new Uint8Array(ab)
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i)
+  }
+
+  const blob = new Blob([ab], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `latex-formula.png`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 /** 内部导出逻辑：调用 useExport 的 exportFormula */
 async function doExport(): Promise<AgileLatexExport> {
   return await exportFormula(props.modelValue || '')
@@ -409,7 +469,7 @@ defineExpose({
 /* 顶部：符号面板占 32% 高度 */
 .agile-latex-formula__top {
   height: 32%;
-  min-height: 160px;
+  min-height: 130px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
 }
@@ -504,5 +564,16 @@ defineExpose({
 
 .agile-latex-formula__input :deep(.t-textarea__inner) {
   flex: 1;
+}
+
+.latex__preview-action {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  flex: 1;
+}
+
+.latex__preview-action :deep(.t-button) {
+  margin-left: 4px;
 }
 </style>

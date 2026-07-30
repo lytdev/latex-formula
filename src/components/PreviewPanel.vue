@@ -5,18 +5,11 @@
       正在加载 MathJax...
     </div>
     <!-- 输入为空 -->
-    <div
-      v-else-if="!latex.trim()"
-      class="preview-placeholder"
-    >
+    <div v-else-if="!latex.trim()" class="preview-placeholder">
       输入 LaTeX 公式以预览
     </div>
     <!-- 渲染公式的容器 -->
-    <div
-      v-else
-      ref="previewContainer"
-      class="preview-content"
-    />
+    <div v-else ref="previewContainer" class="preview-content" />
   </div>
 </template>
 
@@ -69,6 +62,7 @@ watch(
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => doRender(newVal), 300)
   },
+  { immediate: true }
 )
 
 // ── MathJax 就绪后首次渲染 ──

@@ -1,6 +1,6 @@
 {
-  "name": "agile-latex-formula",
-  "version": "0.1.0",
+  "name": "@agilehub/agile-latex-formula",
+  "version": "0.1.5",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "dist"
   ],
   "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+    "access": "public"
   },
   "main": "./dist/agile-latex-formula.cjs",
   "module": "./dist/agile-latex-formula.mjs",
@@ -31,14 +31,13 @@
     "preview": "vite preview"
   },
   "peerDependencies": {
-    "tdesign-vue-next": "^1.9.0",
     "vue": "^3.3.0"
   },
   "dependencies": {
     "@zumer/snapdom": "^2.23.1",
     "mathjax-full": "^3.2.2",
-    "tdesign-vue-next": "^1.9.0",
-    "tdesign-icons-vue-next": "^0.4.7"
+    "tdesign-icons-vue-next": "^0.4.7",
+    "tdesign-vue-next": "^1.9.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
