@@ -12,6 +12,8 @@
             <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">↪
               恢复</t-button>
             <span class="toolbar-sep" />
+            <t-button size="small" variant="text" @click="clearInput">✕ 清除</t-button>
+            <span class="toolbar-sep" />
             <span class="agile-latex__label">颜色</span>
             <button v-for="c in presetColors" :key="c" class="color-btn" :style="{ backgroundColor: c }" :title="c"
               @click="applyColor(c)" />
@@ -159,6 +161,11 @@ function pickCustomColor() {
   input.value = '#000000'
   input.addEventListener('input', () => applyColor(input.value))
   input.click()
+}
+
+function clearInput() {
+  pushHistory(props.modelValue)
+  emit('update:modelValue', '')
 }
 
 function handleInput(value: string) {
