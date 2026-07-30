@@ -17,15 +17,18 @@
               @click="applyColor(c)" />
             <button class="color-btn color-btn--none" title="自定义颜色" @click="pickCustomColor">+</button>
           </div>
-          <t-button size="small" theme="primary" @click="handleExport">
-            导出
-          </t-button>
+         
         </div>
         <LatexInput ref="latexInputRef" :model-value="modelValue" :placeholder="placeholder" :readonly="readonly"
           @update:model-value="handleInput" />
       </div>
       <div class="agile-latex__preview">
-        <div class="agile-latex__label">实时预览</div>
+        <div class="latex__preview-header">
+          <span class="agile-latex__label">实时预览</span>
+          <t-button size="small" theme="primary" @click="handleExport">
+            导出
+          </t-button>
+        </div>
         <PreviewPanel :latex="modelValue" />
       </div>
     </div>
@@ -284,7 +287,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__input-header {
+.agile-latex__input-header,.latex__preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

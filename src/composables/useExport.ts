@@ -22,6 +22,7 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   // Capture the entire container (not just the SVG)
   const canvas = await snapdom.toCanvas(container, {
     scale: 2,
+    reconcile: true,
   })
 
   document.body.removeChild(container)
