@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { ref,useTemplateRef } from 'vue'
-import { Button as TButton} from 'tdesign-vue-next'
+import { Button as TButton, Dialog as TDialog} from 'tdesign-vue-next'
 import { AgileLatex, type AgileLatexExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)

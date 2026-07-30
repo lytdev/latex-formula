@@ -102,7 +102,7 @@ import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
 import type { AgileLatexExport } from './types'
 import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon, ExportIcon, Camera1Icon } from 'tdesign-icons-vue-next'
-import { Button as TButton, Dropdown as TDropdown, DropdownMenu as TDropdownMenu, DropdownItem as TDropdownItem, ColorPicker as TColorPicker } from 'tdesign-vue-next'
+import { Button as TButton, Dropdown as TDropdown, DropdownMenu as TDropdownMenu, DropdownItem as TDropdownItem, ColorPicker as TColorPicker, Dialog as TDialog } from 'tdesign-vue-next'
 
 /**
  * 组件 Props — 通过 v-model 绑定 LaTeX 代码
