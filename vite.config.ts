@@ -22,7 +22,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'AgileLatex',
       formats: ['es', 'cjs'],
-      fileName: (format) => `agile-latex.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format) => `agile-latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
       external: ['vue', 'tdesign-vue-next'],

@@ -1,19 +1,19 @@
 {
-  "name": "agile-latex",
+  "name": "agile-latex-formula",
   "version": "0.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "type": "module",
   "files": [
     "dist"
   ],
-  "main": "./dist/agile-latex.cjs",
-  "module": "./dist/agile-latex.mjs",
+  "main": "./dist/agile-latex-formula.cjs",
+  "module": "./dist/agile-latex-formula.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/agile-latex.mjs",
-      "require": "./dist/agile-latex.cjs"
+      "import": "./dist/agile-latex-formula.mjs",
+      "require": "./dist/agile-latex-formula.cjs"
     }
   },
   "scripts": {

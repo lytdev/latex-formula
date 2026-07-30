@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-29  
 **Status:** Approved  
-**Project:** `agile-latex` — npm-published Vue 3 component
+**Project:** `agile-latex-formula` — npm-published Vue 3 component
 
 ---
 
@@ -178,7 +178,7 @@ interface AgileLatexExport {
 
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
-import { AgileLatex, type AgileLatexExport } from 'agile-latex'
+import { AgileLatex, type AgileLatexExport } from 'agile-latex-formula'
 import 'tdesign-vue-next/es/style/index.css'
 
 const latexCode = ref('')

@@ -1,16 +1,16 @@
 <template>
-  <div class="agile-latex">
+  <div class="agile-latex-formula">
     <!-- 顶部：符号面板 -->
-    <div class="agile-latex__top">
+    <div class="agile-latex-formula__top">
       <SymbolPanel @insert="handleInsert" />
     </div>
     <!-- 底部：输入区（左）+ 预览区（右） -->
-    <div class="agile-latex__bottom">
-      <div class="agile-latex__input">
+    <div class="agile-latex-formula__bottom">
+      <div class="agile-latex-formula__input">
         <!-- 工具栏：撤销/恢复/清除 + 字体 + 字号 + 颜色 -->
-        <div class="agile-latex__input-header">
-          <span class="agile-latex__label">LaTeX 输入</span>
-          <div class="agile-latex__toolbar" @mousedown="snapSelection">
+        <div class="agile-latex-formula__input-header">
+          <span class="agile-latex-formula__label">LaTeX 输入</span>
+          <div class="agile-latex-formula__toolbar" @mousedown="snapSelection">
             <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">
               <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
                 :stroke-width="2.5" />
@@ -64,9 +64,9 @@
           @update:model-value="handleInput" />
       </div>
       <!-- 实时公式预览区域 -->
-      <div class="agile-latex__preview">
+      <div class="agile-latex-formula__preview">
         <div class="latex__preview-header">
-          <span class="agile-latex__label">实时预览</span>
+          <span class="agile-latex-formula__label">实时预览</span>
           <t-button size="small" theme="primary" @click="handleExport">
             <template #icon>
               <export-icon :fill-color='["#bbd3fb", "#f78d94"]' :stroke-color='["currentColor", "#ecf2fe"]'
@@ -395,7 +395,7 @@ defineExpose({
 
 <style scoped>
 /* ── 主布局 ── */
-.agile-latex {
+.agile-latex-formula {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -407,7 +407,7 @@ defineExpose({
 }
 
 /* 顶部：符号面板占 32% 高度 */
-.agile-latex__top {
+.agile-latex-formula__top {
   height: 32%;
   min-height: 160px;
   border-bottom: 1px solid var(--td-component-border);
@@ -415,20 +415,20 @@ defineExpose({
 }
 
 /* 底部：输入区 + 预览区 flex 平分 */
-.agile-latex__bottom {
+.agile-latex-formula__bottom {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
 /* 工具栏（撤销/恢复/清除/字体/字号/颜色） */
-.agile-latex__toolbar {
+.agile-latex-formula__toolbar {
   display: flex;
   align-items: center;
   padding: 0 6px;
 }
 
-.agile-latex__toolbar :deep(.t-button__text) {
+.agile-latex-formula__toolbar :deep(.t-button__text) {
   display: flex;
   align-items: center;
 }
@@ -467,7 +467,7 @@ defineExpose({
   justify-content: center;
 }
 
-.agile-latex__input {
+.agile-latex-formula__input {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -476,7 +476,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__preview {
+.agile-latex-formula__preview {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -484,7 +484,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__input-header,
+.agile-latex-formula__input-header,
 .latex__preview-header {
   display: flex;
   justify-content: space-between;
@@ -492,17 +492,17 @@ defineExpose({
   margin-bottom: 8px;
 }
 
-.agile-latex__label {
+.agile-latex-formula__label {
   font-size: 13px;
   font-weight: 500;
   color: var(--td-text-color-secondary);
 }
 
-.agile-latex__input-header .agile-latex__label {
+.agile-latex-formula__input-header .agile-latex-formula__label {
   margin-bottom: 0;
 }
 
-.agile-latex__input :deep(.t-textarea__inner) {
+.agile-latex-formula__input :deep(.t-textarea__inner) {
   flex: 1;
 }
 </style>

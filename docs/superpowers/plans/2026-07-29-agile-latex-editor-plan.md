@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a self-contained Vue 3 component library (`agile-latex`) providing a LaTeX editor with MathJax 3 rendering, symbol library, and export (LaTeX + MathML + base64 PNG).
+**Goal:** Build a self-contained Vue 3 component library (`agile-latex-formula`) providing a LaTeX editor with MathJax 3 rendering, symbol library, and export (LaTeX + MathML + base64 PNG).
 
 **Architecture:** A single Vue 3 SFC (`AgileLatex.vue`) composes three sub-components (SymbolPanel, LatexInput, PreviewPanel) driven by three composables (useMathJax, useExport, useSymbols). Vite library mode produces ESM + CJS + .d.ts. MathJax 3 bundled; TDesign and Vue are peer dependencies.
 
@@ -22,7 +22,7 @@
 ### File Structure
 
 ```
-agile-latex/
+agile-latex-formula/
 ├── package.json
 ├── tsconfig.json
 ├── tsconfig.build.json
@@ -77,19 +77,19 @@ dist
 
 ```json
 {
-  "name": "agile-latex",
+  "name": "agile-latex-formula",
   "version": "0.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "type": "module",
   "files": ["dist"],
-  "main": "./dist/agile-latex.cjs",
-  "module": "./dist/agile-latex.mjs",
+  "main": "./dist/agile-latex-formula.cjs",
+  "module": "./dist/agile-latex-formula.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/agile-latex.mjs",
-      "require": "./dist/agile-latex.cjs"
+      "import": "./dist/agile-latex-formula.mjs",
+      "require": "./dist/agile-latex-formula.cjs"
     }
   },
   "scripts": {
@@ -185,7 +185,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'AgileLatex',
       formats: ['es', 'cjs'],
-      fileName: (format) => `agile-latex.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format) => `agile-latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
       external: ['vue', 'tdesign-vue-next'],
@@ -1015,14 +1015,14 @@ Create `src/AgileLatex.vue`:
 
 ```vue
 <template>
-  <div class="agile-latex">
-    <div class="agile-latex__top">
+  <div class="agile-latex-formula">
+    <div class="agile-latex-formula__top">
       <SymbolPanel @insert="handleInsert" />
     </div>
-    <div class="agile-latex__bottom">
-      <div class="agile-latex__input">
-        <div class="agile-latex__input-header">
-          <span class="agile-latex__label">LaTeX 输入</span>
+    <div class="agile-latex-formula__bottom">
+      <div class="agile-latex-formula__input">
+        <div class="agile-latex-formula__input-header">
+          <span class="agile-latex-formula__label">LaTeX 输入</span>
           <t-button size="small" theme="primary" @click="handleExport">
             导出
           </t-button>
@@ -1034,8 +1034,8 @@ Create `src/AgileLatex.vue`:
           @update:model-value="handleInput"
         />
       </div>
-      <div class="agile-latex__preview">
-        <div class="agile-latex__label">实时预览</div>
+      <div class="agile-latex-formula__preview">
+        <div class="agile-latex-formula__label">实时预览</div>
         <PreviewPanel :latex="modelValue" />
       </div>
     </div>
@@ -1111,7 +1111,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.agile-latex {
+.agile-latex-formula {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1121,20 +1121,20 @@ defineExpose({
   overflow: hidden;
 }
 
-.agile-latex__top {
+.agile-latex-formula__top {
   height: 35%;
   min-height: 180px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
 }
 
-.agile-latex__bottom {
+.agile-latex-formula__bottom {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
-.agile-latex__input {
+.agile-latex-formula__input {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1143,7 +1143,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__preview {
+.agile-latex-formula__preview {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1151,25 +1151,25 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__input-header {
+.agile-latex-formula__input-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.agile-latex__label {
+.agile-latex-formula__label {
   font-size: 13px;
   font-weight: 500;
   color: var(--td-text-color-secondary);
   margin-bottom: 8px;
 }
 
-.agile-latex__input-header .agile-latex__label {
+.agile-latex-formula__input-header .agile-latex-formula__label {
   margin-bottom: 0;
 }
 
-.agile-latex__input :deep(.t-textarea__inner) {
+.agile-latex-formula__input :deep(.t-textarea__inner) {
   flex: 1;
 }
 </style>
@@ -1313,8 +1313,8 @@ ls dist/
 Expected output:
 ```
 dist/
-├── agile-latex.mjs       (ESM)
-├── agile-latex.cjs       (CJS)
+├── agile-latex-formula.mjs       (ESM)
+├── agile-latex-formula.cjs       (CJS)
 ├── index.d.ts            (type declarations)
 ├── AgileLatex.vue.d.ts   (component type)
 ├── types.d.ts            (export types)
