@@ -48,7 +48,6 @@
               </template>
             </t-dropdown>
             <span class="toolbar-sep" />
-            <span class="agile-latex__label">颜色</span>
             <!-- TDesign 颜色选择器（含预设色块 + 自定义取色） -->
             <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="red" :colorModes="['monochrome']" :borderless="true"
               format="HEX" :popup-props="{ placement: 'bottom-right' }" @change="onColorPickerChange" />
@@ -62,7 +61,12 @@
       <div class="agile-latex__preview">
         <div class="latex__preview-header">
           <span class="agile-latex__label">实时预览</span>
-          <t-button size="small" theme="primary" @click="handleExport">导出</t-button>
+          <t-button size="small" theme="primary" @click="handleExport">
+            <template #icon>
+              <export-icon :fill-color='["#bbd3fb","#f78d94"]' :stroke-color='["currentColor","#ecf2fe"]' :stroke-width="2.5"/>
+            </template>
+            导出
+          </t-button>
         </div>
         <PreviewPanel :latex="modelValue" />
       </div>
@@ -77,7 +81,7 @@ import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
 import type { AgileLatexExport } from './types'
-import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon } from 'tdesign-icons-vue-next'
+import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon, ExportIcon } from 'tdesign-icons-vue-next'
 
 /**
  * 组件 Props — 通过 v-model 绑定 LaTeX 代码
@@ -341,7 +345,6 @@ function handleInsert(latex: string) {
 /** 导出按钮 → 渲染当前公式 → console.log + emit render */
 async function handleExport() {
   const result = await doExport()
-  console.log('[AgileLatex] 导出:', result)
   emit('render', result)
 }
 
@@ -360,7 +363,6 @@ async function doExport(): Promise<AgileLatexExport> {
  */
 async function exposedExportFormula(): Promise<AgileLatexExport> {
   const result = await doExport()
-  console.log('[AgileLatex] exportFormula:', result)
   emit('render', result)
   return result
 }
@@ -374,7 +376,6 @@ async function exposedExportFormula(): Promise<AgileLatexExport> {
 async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
   emit('update:modelValue', latex)
   const result = await exportFormula(latex)
-  console.log('[AgileLatex] renderFormula:', result)
   emit('render', result)
   return result
 }
@@ -391,7 +392,8 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 600px;
+  min-height: 450px;
+  min-width: 860px;
   border: 1px solid var(--td-component-border);
   border-radius: var(--td-radius-default);
   overflow: hidden;
@@ -416,9 +418,7 @@ defineExpose({
 .agile-latex__toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  background: var(--td-bg-color-secondarycontainer);
+  padding: 0 6px;
 }
 
 .toolbar-sep {
@@ -471,7 +471,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__input-header {
+.agile-latex__input-header,.latex__preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
