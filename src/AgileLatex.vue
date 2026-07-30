@@ -17,13 +17,11 @@
             <span class="agile-latex__label">颜色</span>
             <button v-for="c in presetColors" :key="c" class="color-btn" :style="{ backgroundColor: c }" :title="c"
               @click="applyColor(c)" />
-            <button class="color-btn color-btn--none" title="自定义颜色" @click="openColorPicker">+</button>
-            <input
-              ref="colorInputRef"
-              type="color"
-              class="color-input-hidden"
-              value="#000000"
-              @input="applyColor(($event.target as HTMLInputElement).value)"
+            <t-color-picker
+              size="small"
+              :swatch-colors="presetColors"
+              :popup-props="{ placement: 'bottom-right' }"
+              @change="onColorPickerChange"
             />
           </div>
          
@@ -69,7 +67,6 @@ const emit = defineEmits<{
 
 const { exportFormula } = useExport()
 const latexInputRef = useTemplateRef('latexInputRef')
-const colorInputRef = useTemplateRef('colorInputRef')
 
 // ── 撤销/恢复 ──
 const MAX_HISTORY = 200
@@ -163,8 +160,8 @@ function applyColor(hex: string) {
   insertAtCursor(`\\textcolor{${hex}}{`, '}', ' ')
 }
 
-function openColorPicker() {
-  colorInputRef.value?.click()
+function onColorPickerChange(value: string) {
+  applyColor(value)
 }
 
 function clearInput() {
@@ -273,14 +270,6 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.color-input-hidden {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
 }
 
 .agile-latex__bottom {
