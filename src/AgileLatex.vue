@@ -20,6 +20,9 @@
             <t-color-picker
               size="small"
               :swatch-colors="presetColors"
+              :colorModes="['monochrome']"
+              :borderless="true"
+              format="HEX"
               :popup-props="{ placement: 'bottom-right' }"
               @change="onColorPickerChange"
             />
@@ -176,8 +179,24 @@ function handleInput(value: string) {
 
 function handleInsert(latex: string) {
   pushHistory(props.modelValue)
-  const newValue = props.modelValue + latex
-  emit('update:modelValue', newValue)
+  const ta = latexInputRef.value?.getNativeTextarea()
+  if (!ta) {
+    // Fallback: append to end
+    emit('update:modelValue', props.modelValue + latex)
+    return
+  }
+  const start = ta.selectionStart
+  const end = ta.selectionEnd
+  const text = props.modelValue
+  // Replace selected text or insert at cursor
+  const newText = text.slice(0, start) + latex + text.slice(end)
+  emit('update:modelValue', newText)
+  // Move cursor after inserted text
+  const cursorPos = start + latex.length
+  requestAnimationFrame(() => {
+    ta.focus()
+    ta.setSelectionRange(cursorPos, cursorPos)
+  })
 }
 
 async function handleExport() {
