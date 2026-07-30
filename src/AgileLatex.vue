@@ -14,6 +14,13 @@
             <span class="toolbar-sep" />
             <t-button size="small" variant="text" @click="clearInput">✕ 清除</t-button>
             <span class="toolbar-sep" />
+            <span class="agile-latex__label">样式</span>
+            <t-button size="small" variant="outline" title="加粗" @click="applyFont('mathbf')"><b>B</b></t-button>
+            <t-button size="small" variant="outline" title="斜体" @click="applyFont('mathit')"><i>I</i></t-button>
+            <t-button size="small" variant="outline" title="手写体" @click="applyFont('mathcal')">𝒞</t-button>
+            <t-button size="small" variant="outline" title="下划线" @click="applyFont('underline')"><u>U</u></t-button>
+            <t-button size="small" variant="outline" title="常规体" @click="applyFont('mathrm')">R</t-button>
+            <span class="toolbar-sep" />
             <span class="agile-latex__label">颜色</span>
             <button v-for="c in presetColors" :key="c" class="color-btn" :style="{ backgroundColor: c }" :title="c"
               @click="applyColor(c)" />
@@ -161,6 +168,10 @@ function insertAtCursor(before: string, after: string, placeholder: string) {
 
 function applyColor(hex: string) {
   insertAtCursor(`\\textcolor{${hex}}{`, '}', ' ')
+}
+
+function applyFont(cmd: string) {
+  insertAtCursor(`\\${cmd}{`, '}', ' ')
 }
 
 function onColorPickerChange(value: string) {
