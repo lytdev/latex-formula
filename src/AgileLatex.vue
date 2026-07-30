@@ -12,20 +12,24 @@
           <span class="agile-latex__label">LaTeX 输入</span>
           <div class="agile-latex__toolbar" @mousedown="snapSelection">
             <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">
-              <rollback-icon :fill-color='["#bbd3fb","#f78d94"]' size="22px" :stroke-color='["currentColor","#0052d9"]' :stroke-width="2.5"/>
-              </t-button>
+              <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
+                :stroke-width="2.5" />
+            </t-button>
             <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">
-              <rollfront-icon :fill-color='["#bbd3fb","#f78d94"]' size="22px" :stroke-color='["currentColor","#0052d9"]' :stroke-width="2.5"/>
-              </t-button>
+              <rollfront-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
+                :stroke-width="2.5" />
+            </t-button>
             <t-button size="small" variant="text" @click="clearInput">
-              <clear-icon :fill-color='["#bbd3fb","#f78d94"]' size="22px" :stroke-color='["currentColor","#0052d9"]' :stroke-width="2.5"/>
+              <clear-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
+                :stroke-width="2.5" />
             </t-button>
             <span class="toolbar-sep" />
             <!-- 字体样式下拉 -->
             <t-dropdown>
               <t-button size="small" variant="outline" class="latex__toolbar-title">
                 <span class="title">字体</span>
-                <text-style-icon :fill-color='["#bbd3fb","#f78d94"]' size="18px" :stroke-color='["currentColor","#0052d9"]' :stroke-width="2.5"/>
+                <text-style-icon :fill-color='["#bbd3fb", "#f78d94"]' size="16px"
+                  :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
               </t-button>
               <template #dropdown>
                 <t-dropdown-menu>
@@ -38,7 +42,8 @@
             <t-dropdown>
               <t-button size="small" variant="outline" style="margin-left: 4px;" class="latex__toolbar-title">
                 <span class="title">字号</span>
-                <text-icon :fill-color='["#bbd3fb","#f78d94"]' size="20px" :stroke-color='["currentColor","#0052d9"]' :stroke-width="2.5"/>
+                <text-icon :fill-color='["#bbd3fb", "#f78d94"]' size="20px" :stroke-color='["currentColor", "#0052d9"]'
+                  :stroke-width="2.5" />
               </t-button>
               <template #dropdown>
                 <t-dropdown-menu>
@@ -49,8 +54,9 @@
             </t-dropdown>
             <span class="toolbar-sep" />
             <!-- TDesign 颜色选择器（含预设色块 + 自定义取色） -->
-            <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="red" :colorModes="['monochrome']" :borderless="true"
-              format="HEX" :popup-props="{ placement: 'bottom-right' }" @change="onColorPickerChange" />
+            <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="red" :colorModes="['monochrome']"
+              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }"
+              @change="onColorPickerChange" />
           </div>
         </div>
         <!-- LaTeX 输入框 -->
@@ -63,7 +69,8 @@
           <span class="agile-latex__label">实时预览</span>
           <t-button size="small" theme="primary" @click="handleExport">
             <template #icon>
-              <export-icon :fill-color='["#bbd3fb","#f78d94"]' :stroke-color='["currentColor","#ecf2fe"]' :stroke-width="2.5"/>
+              <export-icon :fill-color='["#bbd3fb", "#f78d94"]' :stroke-color='["currentColor", "#ecf2fe"]'
+                :stroke-width="2.5" />
             </template>
             导出
           </t-button>
@@ -249,23 +256,23 @@ function insertAtCursor(before: string, after: string, placeholder: string) {
 
 /** 字号下拉选项 — 对应 LaTeX 声明式字号命令 */
 const fontSizeOptions = [
-  { content: '超小 \\tiny', value: 'tiny' },
-  { content: '小 \\small', value: 'small' },
-  { content: '正常 \\normalsize', value: 'normalsize' },
-  { content: '大 \\large', value: 'large' },
-  { content: '超大 \\Large', value: 'Large' },
-  { content: '巨无霸大 \\huge', value: 'huge' },
+  { content: '超小', value: 'tiny' },
+  { content: '小', value: 'small' },
+  { content: '正常', value: 'normalsize' },
+  { content: '大', value: 'large' },
+  { content: '超大', value: 'Large' },
+  { content: '巨无霸大', value: 'huge' },
 ]
 
 /** 字体样式下拉选项 — 对应 LaTeX 字体命令 */
 const fontFamilyOptions = [
-  { content: '加粗 \\mathbf', value: 'mathbf' },
-  { content: '斜体 \\mathit', value: 'mathit' },
-  { content: '下划线 \\underline', value: 'underline' },
-  { content: 'Sans serif \\mathsf', value: 'mathsf' },
-  { content: '手写体 \\mathcal', value: 'mathcal' },
-  { content: '黑板报体 \\mathbb', value: 'mathbb' },
-  { content: '德文尖角体 \\mathfrak', value: 'mathfrak' },
+  { content: '加粗', value: 'mathbf' },
+  { content: '斜体', value: 'mathit' },
+  { content: '下划线', value: 'underline' },
+  { content: 'Sans serif', value: 'mathsf' },
+  { content: '手写体', value: 'mathcal' },
+  { content: '黑板报体', value: 'mathbb' },
+  { content: '德文尖角体', value: 'mathfrak' },
 ]
 
 // ═══════════════════════════════════════════════════════════
@@ -421,6 +428,11 @@ defineExpose({
   padding: 0 6px;
 }
 
+.agile-latex__toolbar :deep(.t-button__text) {
+  display: flex;
+  align-items: center;
+}
+
 .toolbar-sep {
   width: 1px;
   height: 20px;
@@ -438,6 +450,7 @@ defineExpose({
   padding: 0;
   transition: transform 0.15s;
 }
+
 .color-btn:hover {
   transform: scale(1.2);
   border-color: rgba(255, 255, 255, 0.5);
@@ -471,7 +484,8 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex__input-header,.latex__preview-header {
+.agile-latex__input-header,
+.latex__preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

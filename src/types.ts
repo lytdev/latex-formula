@@ -14,4 +14,5 @@ export interface SymbolItem {
   label: string
   /** 点击后插入编辑器的 LaTeX 代码片段 */
   latex: string
+  thumbnail?: string
 }

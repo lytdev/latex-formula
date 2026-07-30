@@ -17,6 +17,7 @@ export interface SymbolCategory {
   key: string
   /** 分类中文名称 */
   label: string
+  thumbnail?: string
   /** 该分类下的符号列表 */
   symbols: SymbolItem[]
 }
@@ -144,7 +145,7 @@ const CATEGORIES: SymbolCategory[] = [
       { label: '核', latex: '\\ker ' },
       { label: '度数', latex: '\\deg ' },
       { label: '最大公约', latex: '\\gcd( , )' },
-      { label: '最小公倍', latex: '\\operatorname{lcm}( , )' },
+      { label: '最小公倍', latex: '\\operatorname{lcm}( , )' }
     ],
   },
   {
