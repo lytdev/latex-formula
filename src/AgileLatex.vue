@@ -7,14 +7,25 @@
       <div class="agile-latex__input">
         <div class="agile-latex__input-header">
           <span class="agile-latex__label">LaTeX 输入</span>
-          <div class="agile-latex__toolbar">
+          <div class="agile-latex__toolbar" @mousedown="snapSelection">
             <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">↩ 撤销</t-button>
             <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">↪
               恢复</t-button>
             <span class="toolbar-sep" />
             <t-button size="small" variant="text" @click="clearInput">✕ 清除</t-button>
             <span class="toolbar-sep" />
-            <span class="agile-latex__label">字号</span>
+            <t-dropdown>
+              <t-button size="small" variant="outline">字体 ▼</t-button>
+              <template #dropdown>
+                <t-dropdown-menu>
+                  <t-dropdown-item
+                    v-for="opt in fontFamilyOptions"
+                    :key="opt.value"
+                    @click="applyFont(opt.value)"
+                  >{{ opt.content }}</t-dropdown-item>
+                </t-dropdown-menu>
+              </template>
+            </t-dropdown>
             <t-dropdown>
               <t-button size="small" variant="outline">字号 ▼</t-button>
               <template #dropdown>
@@ -27,11 +38,6 @@
                 </t-dropdown-menu>
               </template>
             </t-dropdown>
-            <t-button size="small" variant="outline" title="加粗" @click="applyFont('mathbf')"><b>B</b></t-button>
-            <t-button size="small" variant="outline" title="斜体" @click="applyFont('mathit')"><i>I</i></t-button>
-            <t-button size="small" variant="outline" title="手写体" @click="applyFont('mathcal')">𝒞</t-button>
-            <t-button size="small" variant="outline" title="下划线" @click="applyFont('underline')"><u>U</u></t-button>
-            <t-button size="small" variant="outline" title="常规体" @click="applyFont('mathrm')">R</t-button>
             <span class="toolbar-sep" />
             <span class="agile-latex__label">颜色</span>
             <button v-for="c in presetColors" :key="c" class="color-btn" :style="{ backgroundColor: c }" :title="c"
@@ -147,12 +153,28 @@ const presetColors = [
   '#ff5722',
 ]
 
+// Saved selection — toolbar button clicks steal focus before @click fires,
+// so we snapshot the selection when the textarea loses focus.
+let lastSelection = { start: 0, end: 0 }
+
+function snapSelection() {
+  const ta = latexInputRef.value?.getNativeTextarea()
+  if (ta) {
+    lastSelection = { start: ta.selectionStart, end: ta.selectionEnd }
+  }
+}
+
 function insertAtCursor(before: string, after: string, placeholder: string) {
   const ta = latexInputRef.value?.getNativeTextarea()
   if (!ta) return
 
-  const start = ta.selectionStart
-  const end = ta.selectionEnd
+  // Use current selection if non-empty, otherwise fall back to saved position
+  let start = ta.selectionStart
+  let end = ta.selectionEnd
+  if (start === end && lastSelection.start !== lastSelection.end) {
+    start = lastSelection.start
+    end = lastSelection.end
+  }
   const text = props.modelValue
 
   if (start !== end) {
@@ -185,6 +207,14 @@ const fontSizeOptions = [
   { content: '大 \\large', value: 'large' },
   { content: '超大 \\Large', value: 'Large' },
   { content: '巨无霸大 \\huge', value: 'huge' },
+]
+
+const fontFamilyOptions = [
+  { content: '加粗 ', value: 'mathbf' },
+  { content: '斜体', value: 'mathit' },
+  { content: '下划线', value: 'underline' },
+  { content: '常规体', value: 'mathrm' },
+  { content: '手写体', value: 'mathcal' }
 ]
 
 function onFontSizeClick(data: { content: string; value: string }) {
