@@ -14,7 +14,19 @@
             <span class="toolbar-sep" />
             <t-button size="small" variant="text" @click="clearInput">✕ 清除</t-button>
             <span class="toolbar-sep" />
-            <span class="agile-latex__label">样式</span>
+            <span class="agile-latex__label">字号</span>
+            <t-dropdown>
+              <t-button size="small" variant="outline">字号 ▼</t-button>
+              <template #dropdown>
+                <t-dropdown-menu>
+                  <t-dropdown-item
+                    v-for="opt in fontSizeOptions"
+                    :key="opt.value"
+                    @click="onFontSizeClick(opt)"
+                  >{{ opt.content }}</t-dropdown-item>
+                </t-dropdown-menu>
+              </template>
+            </t-dropdown>
             <t-button size="small" variant="outline" title="加粗" @click="applyFont('mathbf')"><b>B</b></t-button>
             <t-button size="small" variant="outline" title="斜体" @click="applyFont('mathit')"><i>I</i></t-button>
             <t-button size="small" variant="outline" title="手写体" @click="applyFont('mathcal')">𝒞</t-button>
@@ -166,12 +178,29 @@ function insertAtCursor(before: string, after: string, placeholder: string) {
   }
 }
 
+const fontSizeOptions = [
+  { content: '超小 \\tiny', value: 'tiny' },
+  { content: '小 \\small', value: 'small' },
+  { content: '正常 \\normalsize', value: 'normalsize' },
+  { content: '大 \\large', value: 'large' },
+  { content: '超大 \\Large', value: 'Large' },
+  { content: '巨无霸大 \\huge', value: 'huge' },
+]
+
+function onFontSizeClick(data: { content: string; value: string }) {
+  applySize(`\\${data.value}`)
+}
+
 function applyColor(hex: string) {
   insertAtCursor(`\\textcolor{${hex}}{`, '}', ' ')
 }
 
 function applyFont(cmd: string) {
   insertAtCursor(`\\${cmd}{`, '}', ' ')
+}
+
+function applySize(cmd: string) {
+  insertAtCursor(`{${cmd} `, '}', ' ')
 }
 
 function onColorPickerChange(value: string) {
