@@ -9,7 +9,7 @@ pnpm i @agilehub/agile-latex-formula          #安装依赖
 ```typescript
 <template>
   <el-dialog v-model="visible" width="960px" title="公式编辑器" destroy-on-close>
-    <div class="dialog-viewer-shell" style="450px">
+    <div class="dialog-viewer-shell" style="560px">
       <AgileLatex v-model="latex" @render="onRender"/>
     </div>
   </el-dialog>
