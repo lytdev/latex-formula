@@ -469,7 +469,7 @@ defineExpose({
 /* 顶部：符号面板占 32% 高度 */
 .agile-latex-formula__top {
   height: 32%;
-  min-height: 130px;
+  min-height: 150px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
 }

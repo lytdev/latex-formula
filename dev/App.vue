@@ -1,7 +1,7 @@
 <template>
   <div class="playground">
     <t-button @click="latexDialogVisible=true">呈现LaTex公式编辑器</t-button>
-    <t-dialog v-model:visible="latexDialogVisible" :cancelBtn="null" :confirmBtn="null" width="80%" top="5%">
+    <t-dialog v-model:visible="latexDialogVisible" :cancelBtn="null" :confirmBtn="null" width="80%" top="2vh">
       <div class="editor-container">
         <AgileLatex ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
       </div>

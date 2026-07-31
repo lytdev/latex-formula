@@ -88,6 +88,21 @@ function onSymbolClick(latex: string) {
   flex-direction: column;
 }
 
+.symbol-panel :deep(.t-tabs) {
+  display: flex;
+  flex-direction: column;
+}
+
+.symbol-panel :deep(.t-tabs__content) {
+  flex: 1;
+}
+
+.symbol-panel :deep(.t-tab-panel) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .symbol-panel-search {
   padding: 8px 0 0 8px;
   width: 350px;
@@ -95,6 +110,7 @@ function onSymbolClick(latex: string) {
 
 /* 符号网格 — flex-wrap 自动换行，内容超出时垂直滚动 */
 .symbol-grid {
+  flex: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
