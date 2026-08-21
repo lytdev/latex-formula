@@ -55,7 +55,7 @@
             <span class="toolbar-sep" />
             <!-- TDesign 颜色选择器（含预设色块 + 自定义取色） -->
             <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="red" :colorModes="['monochrome']"
-              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }"
+              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }" :recentColors="false"
               @change="onColorPickerChange" />
           </div>
         </div>

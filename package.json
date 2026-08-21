@@ -37,7 +37,7 @@
     "@zumer/snapdom": "^2.23.1",
     "mathjax-full": "^3.2.2",
     "tdesign-icons-vue-next": "^0.4.7",
-    "tdesign-vue-next": "^1.9.0"
+    "tdesign-vue-next": "^1.20.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
