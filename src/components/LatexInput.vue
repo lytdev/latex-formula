@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { Textarea as TTextarea } from 'tdesign-vue-next'
 
 /** 接收父组件通过 v-model 传入的 LaTeX 文本 */
@@ -29,22 +29,22 @@ const emit = defineEmits<{
 }>()
 
 /** TDesign Textarea 组件的模板引用 */
-const textareaRef = useTemplateRef('textareaRef')
+const textareaRef = ref<InstanceType<typeof TTextarea> | null>(null)
 
 /**
  * 获取原生 <textarea> DOM 元素。
  *
- * 这是实现光标处插入的关键 — AgileLatex 通过此方法读取
+ * 这是实现光标处插入的关键 — LatexFormula 通过此方法读取
  * selectionStart/selectionEnd 来在正确位置插入符号/颜色/样式。
  */
 function getNativeTextarea(): HTMLTextAreaElement | null {
   // TDesign 的 t-textarea 外层是包裹 div，需要穿透到内部 <textarea>
   const el = (textareaRef.value as any)?.$el
   if (!el) return null
-  return el.querySelector('textarea') ?? (el as HTMLTextAreaElement)
+  return el instanceof HTMLTextAreaElement ? el : el.querySelector('textarea')
 }
 
-/** 对外暴露 getNativeTextarea，供父组件 AgileLatex 调用 */
+/** 对外暴露 getNativeTextarea，供父组件 LatexFormula 调用 */
 defineExpose({ getNativeTextarea })
 
 /** 输入变化 → 通知父组件更新 modelValue */

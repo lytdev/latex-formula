@@ -1,8 +1,8 @@
-# Agile LaTeX Editor — Design Spec
+# latex-formula — Design Spec
 
 **Date:** 2026-07-29  
 **Status:** Approved  
-**Project:** `agile-latex-formula` — npm-published Vue 3 component
+**Project:** `latex-formula` — npm-published Vue 3 component
 
 ---
 
@@ -27,7 +27,7 @@ A self-contained Vue 3 component library that provides a LaTeX online editor. Co
 ### Component Tree
 
 ```
-AgileLatex.vue (entry — single-file component export)
+LatexFormula.vue (entry — single-file component export)
 ├── SymbolPanel.vue         — Top: symbol/template quick-input buttons
 │   └── uses TDesign t-tabs, t-button
 ├── LatexInput.vue          — Bottom-left: LaTeX code editor
@@ -145,21 +145,21 @@ isRendering: boolean       — render in-progress flag
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `update:modelValue` | `string` | v-model update (standard Vue) |
-| `render` | `AgileLatexExport` | Emitted each time preview re-renders |
+| `render` | `LatexFormulaExport` | Emitted each time preview re-renders |
 
 ### Exposed Methods (via template ref)
 
 ```typescript
-interface AgileLatexExport {
+interface LatexFormulaExport {
   latex: string    // LaTeX source code
   mathml: string   // MathML representation
   base64: string   // Base64-encoded PNG (data:image/png;base64,...)
 }
 
-// exportFormula(): AgileLatexExport
+// exportFormula(): LatexFormulaExport
 // Returns export object for current formula
 
-// renderFormula(latex: string): AgileLatexExport
+// renderFormula(latex: string): LatexFormulaExport
 // Sets LaTeX input, renders, and returns export object
 ```
 
@@ -167,7 +167,7 @@ interface AgileLatexExport {
 
 ```vue
 <template>
-  <AgileLatex
+  <LatexFormula
     v-model="latexCode"
     placeholder="输入公式..."
     ref="editorRef"
@@ -178,13 +178,13 @@ interface AgileLatexExport {
 
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
-import { AgileLatex, type AgileLatexExport } from 'agile-latex-formula'
+import { LatexFormula, type LatexFormulaExport } from 'latex-formula'
 import 'tdesign-vue-next/es/style/index.css'
 
 const latexCode = ref('')
 const editorRef = useTemplateRef('editorRef')
 
-function handleRender(result: AgileLatexExport) {
+function handleRender(result: LatexFormulaExport) {
   console.log('rendered:', result)
 }
 

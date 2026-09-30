@@ -12,7 +12,7 @@ import type { Plugin, OutputChunk, OutputAsset } from 'rollup'
  * 并在 JS chunk 头部注入一段自执行函数，在运行时创建 <style> 元素。
  */
 function inlineAllCss(): Plugin {
-  const STYLE_ID = 'agile-latex-formula-styles'
+  const STYLE_ID = 'latex-formula-styles'
   return {
     name: 'inline-all-css',
     enforce: 'post',
@@ -62,13 +62,14 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'AgileLatex',
+      name: 'LatexFormula',
       formats: ['es', 'cjs'],
-      fileName: (format) => `agile-latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format) => `latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
       external: ['vue'],
       output: {
+        exports: 'named',
         globals: {
           vue: 'Vue',
         },

@@ -1,12 +1,12 @@
 {
-  "name": "@agilehub/agile-latex-formula",
-  "version": "0.2.3",
+  "name": "@agilehub/latex-formula",
+  "version": "1.0.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lytdev/agile-latex-formula.git"
+    "url": "https://github.com/lytdev/latex-formula.git"
   },
-  "license": "MIT",
+  "license": "Apache 2.0",
   "author": "lytdev <lytdev@outlook.com>",
   "type": "module",
   "files": [
@@ -15,19 +15,20 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "./dist/agile-latex-formula.cjs",
-  "module": "./dist/agile-latex-formula.mjs",
+  "main": "./dist/latex-formula.cjs",
+  "module": "./dist/latex-formula.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/agile-latex-formula.mjs",
-      "require": "./dist/agile-latex-formula.cjs"
+      "import": "./dist/latex-formula.mjs",
+      "require": "./dist/latex-formula.cjs"
     }
   },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -p tsconfig.build.json && vite build",
+    "test:package": "node --test tests/package-smoke.mjs tests/symbols-smoke.mjs",
     "preview": "vite preview"
   },
   "peerDependencies": {

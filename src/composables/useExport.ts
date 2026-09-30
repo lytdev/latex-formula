@@ -1,5 +1,5 @@
 import { useMathJax } from './useMathJax'
-import type { AgileLatexExport } from '../types'
+import type { LatexFormulaExport } from '../types'
 import { snapdom } from '@zumer/snapdom'
 
 /**
@@ -26,14 +26,19 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
   document.body.appendChild(container)
 
   // 用 snapdom 截取容器为 Canvas（2x 分辨率保证清晰度）
-  const canvas = await snapdom.toCanvas(container, {
-    scale: 2,
-    reconcile: true, // 像素级精确布局，避免文字换行偏差
-  })
-
-  // 清理并返回 base64 PNG
-  document.body.removeChild(container)
-  return canvas.toDataURL('image/png')
+  try {
+    const { width, height } = container.getBoundingClientRect()
+    if (!width || !height || width * 2 > 4096 || height * 2 > 4096 || width * height * 4 > 16_777_216) {
+      throw new Error('公式图片尺寸过大，无法导出')
+    }
+    const canvas = await snapdom.toCanvas(container, {
+      scale: 2,
+      reconcile: true,
+    })
+    return canvas.toDataURL('image/png')
+  } finally {
+    container.remove()
+  }
 }
 
 /**
@@ -42,7 +47,7 @@ export async function svgToBase64(svgElement: Element): Promise<string> {
  * @returns exportFormula — 接收 LaTeX 字符串，返回完整的导出对象
  */
 export function useExport(): {
-  exportFormula: (latex: string) => Promise<AgileLatexExport>
+  exportFormula: (latex: string) => Promise<LatexFormulaExport>
 } {
   const { render, ready } = useMathJax()
 
@@ -52,7 +57,7 @@ export function useExport(): {
    * @param latex - 用户输入的 LaTeX 代码
    * @returns 包含 LaTeX 源码、MathML 字符串和 base64 PNG 的导出对象
    */
-  async function exportFormula(latex: string): Promise<AgileLatexExport> {
+  async function exportFormula(latex: string): Promise<LatexFormulaExport> {
     // 确保 MathJax 已初始化（幂等调用，重复调用无副作用）
     ready()
     // render 是同步的，直接获取 SVG 元素和 MathML 字符串

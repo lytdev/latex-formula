@@ -1,10 +1,10 @@
-# Agile LaTeX Editor — Implementation Plan
+# latex-formula — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a self-contained Vue 3 component library (`agile-latex-formula`) providing a LaTeX editor with MathJax 3 rendering, symbol library, and export (LaTeX + MathML + base64 PNG).
+**Goal:** Build a self-contained Vue 3 component library (`latex-formula`) providing a LaTeX editor with MathJax 3 rendering, symbol library, and export (LaTeX + MathML + base64 PNG).
 
-**Architecture:** A single Vue 3 SFC (`AgileLatex.vue`) composes three sub-components (SymbolPanel, LatexInput, PreviewPanel) driven by three composables (useMathJax, useExport, useSymbols). Vite library mode produces ESM + CJS + .d.ts. MathJax 3 bundled; TDesign and Vue are peer dependencies.
+**Architecture:** A single Vue 3 SFC (`LatexFormula.vue`) composes three sub-components (SymbolPanel, LatexInput, PreviewPanel) driven by three composables (useMathJax, useExport, useSymbols). Vite library mode produces ESM + CJS + .d.ts. MathJax 3 bundled; TDesign and Vue are peer dependencies.
 
 **Tech Stack:** Vue 3 (Composition API), TypeScript, Vite 6 (library mode), MathJax 3 (full, with mhchem), TDesign Vue Next (peer), pnpm
 
@@ -22,7 +22,7 @@
 ### File Structure
 
 ```
-agile-latex-formula/
+latex-formula/
 ├── package.json
 ├── tsconfig.json
 ├── tsconfig.build.json
@@ -32,9 +32,9 @@ agile-latex-formula/
 │   ├── main.ts                     (dev bootstrap)
 │   └── App.vue                     (dev playground)
 ├── src/
-│   ├── index.ts                    (package entry — exports AgileLatex + types)
-│   ├── types.ts                    (AgileLatexExport, SymbolItem interfaces)
-│   ├── AgileLatex.vue              (main component — layout + wiring)
+│   ├── index.ts                    (package entry — exports LatexFormula + types)
+│   ├── types.ts                    (LatexFormulaExport, SymbolItem interfaces)
+│   ├── LatexFormula.vue              (main component — layout + wiring)
 │   ├── components/
 │   │   ├── SymbolPanel.vue         (top: t-tabs + symbol button grid)
 │   │   ├── LatexInput.vue          (bottom-left: t-textarea)
@@ -63,7 +63,7 @@ agile-latex-formula/
 - Create: `.gitignore`
 
 **Interfaces:**
-- Produces: `AgileLatexExport` interface, `SymbolItem` interface, package entry point, dev playground skeleton
+- Produces: `LatexFormulaExport` interface, `SymbolItem` interface, package entry point, dev playground skeleton
 
 - [ ] **Step 1: Create .gitignore**
 
@@ -77,19 +77,19 @@ dist
 
 ```json
 {
-  "name": "agile-latex-formula",
+  "name": "latex-formula",
   "version": "0.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "type": "module",
   "files": ["dist"],
-  "main": "./dist/agile-latex-formula.cjs",
-  "module": "./dist/agile-latex-formula.mjs",
+  "main": "./dist/latex-formula.cjs",
+  "module": "./dist/latex-formula.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/agile-latex-formula.mjs",
-      "require": "./dist/agile-latex-formula.cjs"
+      "import": "./dist/latex-formula.mjs",
+      "require": "./dist/latex-formula.cjs"
     }
   },
   "scripts": {
@@ -183,9 +183,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'AgileLatex',
+      name: 'LatexFormula',
       formats: ['es', 'cjs'],
-      fileName: (format) => `agile-latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format) => `latex-formula.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
       external: ['vue', 'tdesign-vue-next'],
@@ -203,7 +203,7 @@ export default defineConfig({
 - [ ] **Step 6: Create src/types.ts**
 
 ```typescript
-export interface AgileLatexExport {
+export interface LatexFormulaExport {
   /** LaTeX source code */
   latex: string
   /** MathML representation */
@@ -223,8 +223,8 @@ export interface SymbolItem {
 - [ ] **Step 7: Create src/index.ts (package entry)**
 
 ```typescript
-export { default as AgileLatex } from './AgileLatex.vue'
-export type { AgileLatexExport } from './types'
+export { default as LatexFormula } from './LatexFormula.vue'
+export type { LatexFormulaExport } from './types'
 ```
 
 - [ ] **Step 8: Create index.html (dev playground)**
@@ -235,7 +235,7 @@ export type { AgileLatexExport } from './types'
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agile LaTeX - Dev Playground</title>
+    <title>latex-formula - Dev Playground</title>
   </head>
   <body>
     <div id="app"></div>
@@ -262,13 +262,13 @@ app.mount('#app')
 ```vue
 <template>
   <div class="playground">
-    <h1>Agile LaTeX — Dev Playground</h1>
-    <!-- Placeholder for AgileLatex component -->
+    <h1>latex-formula — Dev Playground</h1>
+    <!-- Placeholder for LatexFormula component -->
   </div>
 </template>
 
 <script setup lang="ts">
-// Will import AgileLatex once main component is built
+// Will import LatexFormula once main component is built
 </script>
 
 <style>
@@ -618,8 +618,8 @@ git commit -m "feat: add MathJax composable with tex2svg and tex2mml support"
 - Create: `src/composables/useExport.ts`
 
 **Interfaces:**
-- Consumes: `AgileLatexExport` from `src/types.ts`, `useMathJax` from `src/composables/useMathJax.ts`
-- Produces: `useExport()` → `{ exportFormula: (latex: string) => Promise<AgileLatexExport> }`
+- Consumes: `LatexFormulaExport` from `src/types.ts`, `useMathJax` from `src/composables/useMathJax.ts`
+- Produces: `useExport()` → `{ exportFormula: (latex: string) => Promise<LatexFormulaExport> }`
 
 - [ ] **Step 1: Create the composable**
 
@@ -627,10 +627,10 @@ Create `src/composables/useExport.ts`:
 
 ```typescript
 import { useMathJax } from './useMathJax'
-import type { AgileLatexExport } from '../types'
+import type { LatexFormulaExport } from '../types'
 
 export function useExport(): {
-  exportFormula: (latex: string) => Promise<AgileLatexExport>
+  exportFormula: (latex: string) => Promise<LatexFormulaExport>
 } {
   const { render } = useMathJax()
 
@@ -679,7 +679,7 @@ export function useExport(): {
     })
   }
 
-  async function exportFormula(latex: string): Promise<AgileLatexExport> {
+  async function exportFormula(latex: string): Promise<LatexFormulaExport> {
     const { svgElement, mathml } = await render(latex)
     const base64 = await svgToBase64(svgElement)
 
@@ -1000,29 +1000,29 @@ git commit -m "feat: add PreviewPanel with debounced MathJax SVG rendering"
 
 ---
 
-### Task 8: Main AgileLatex Component
+### Task 8: Main LatexFormula Component
 
 **Files:**
-- Create: `src/AgileLatex.vue`
+- Create: `src/LatexFormula.vue`
 
 **Interfaces:**
 - Consumes: All sub-components and composables
-- Produces: `AgileLatex` component with props (modelValue, placeholder, readonly), events (update:modelValue, render), exposed methods (exportFormula, renderFormula)
+- Produces: `LatexFormula` component with props (modelValue, placeholder, readonly), events (update:modelValue, render), exposed methods (exportFormula, renderFormula)
 
-- [ ] **Step 1: Create AgileLatex.vue**
+- [ ] **Step 1: Create LatexFormula.vue**
 
-Create `src/AgileLatex.vue`:
+Create `src/LatexFormula.vue`:
 
 ```vue
 <template>
-  <div class="agile-latex-formula">
-    <div class="agile-latex-formula__top">
+  <div class="latex-formula">
+    <div class="latex-formula__top">
       <SymbolPanel @insert="handleInsert" />
     </div>
-    <div class="agile-latex-formula__bottom">
-      <div class="agile-latex-formula__input">
-        <div class="agile-latex-formula__input-header">
-          <span class="agile-latex-formula__label">LaTeX 输入</span>
+    <div class="latex-formula__bottom">
+      <div class="latex-formula__input">
+        <div class="latex-formula__input-header">
+          <span class="latex-formula__label">LaTeX 输入</span>
           <t-button size="small" theme="primary" @click="handleExport">
             导出
           </t-button>
@@ -1034,8 +1034,8 @@ Create `src/AgileLatex.vue`:
           @update:model-value="handleInput"
         />
       </div>
-      <div class="agile-latex-formula__preview">
-        <div class="agile-latex-formula__label">实时预览</div>
+      <div class="latex-formula__preview">
+        <div class="latex-formula__label">实时预览</div>
         <PreviewPanel :latex="modelValue" />
       </div>
     </div>
@@ -1048,7 +1048,7 @@ import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
-import type { AgileLatexExport } from './types'
+import type { LatexFormulaExport } from './types'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -1062,7 +1062,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'render': [result: AgileLatexExport]
+  'render': [result: LatexFormulaExport]
 }>()
 
 const { exportFormula } = useExport()
@@ -1084,19 +1084,19 @@ async function handleExport() {
   emit('render', result)
 }
 
-async function doExport(): Promise<AgileLatexExport> {
+async function doExport(): Promise<LatexFormulaExport> {
   return await exportFormula(props.modelValue || '')
 }
 
 // --- Exposed methods for parent component via template ref ---
 
-async function exposedExportFormula(): Promise<AgileLatexExport> {
+async function exposedExportFormula(): Promise<LatexFormulaExport> {
   const result = await doExport()
   emit('render', result)
   return result
 }
 
-async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
+async function exposedRenderFormula(latex: string): Promise<LatexFormulaExport> {
   emit('update:modelValue', latex)
   await nextTick()
   const result = await doExport()
@@ -1111,7 +1111,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.agile-latex-formula {
+.latex-formula {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1121,20 +1121,20 @@ defineExpose({
   overflow: hidden;
 }
 
-.agile-latex-formula__top {
+.latex-formula__top {
   height: 35%;
   min-height: 180px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
 }
 
-.agile-latex-formula__bottom {
+.latex-formula__bottom {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
-.agile-latex-formula__input {
+.latex-formula__input {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1143,7 +1143,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex-formula__preview {
+.latex-formula__preview {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1151,25 +1151,25 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex-formula__input-header {
+.latex-formula__input-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.agile-latex-formula__label {
+.latex-formula__label {
   font-size: 13px;
   font-weight: 500;
   color: var(--td-text-color-secondary);
   margin-bottom: 8px;
 }
 
-.agile-latex-formula__input-header .agile-latex-formula__label {
+.latex-formula__input-header .latex-formula__label {
   margin-bottom: 0;
 }
 
-.agile-latex-formula__input :deep(.t-textarea__inner) {
+.latex-formula__input :deep(.t-textarea__inner) {
   flex: 1;
 }
 </style>
@@ -1188,8 +1188,8 @@ pnpm exec vue-tsc --noEmit -p tsconfig.json
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/AgileLatex.vue
-git commit -m "feat: add AgileLatex main component with full wiring and export API"
+git add src/LatexFormula.vue
+git commit -m "feat: add LatexFormula main component with full wiring and export API"
 ```
 
 ---
@@ -1200,7 +1200,7 @@ git commit -m "feat: add AgileLatex main component with full wiring and export A
 - Modify: `dev/App.vue`
 
 **Interfaces:**
-- Consumes: `AgileLatex` component, `AgileLatexExport` type
+- Consumes: `LatexFormula` component, `LatexFormulaExport` type
 
 - [ ] **Step 1: Update dev/App.vue with full playground**
 
@@ -1209,9 +1209,9 @@ Replace `dev/App.vue`:
 ```vue
 <template>
   <div class="playground">
-    <h1 class="title">Agile LaTeX — Dev Playground</h1>
+    <h1 class="title">latex-formula — Dev Playground</h1>
     <div class="editor-wrapper">
-      <AgileLatex
+      <LatexFormula
         ref="editorRef"
         v-model="latexCode"
         placeholder="输入 LaTeX 公式..."
@@ -1240,13 +1240,13 @@ Replace `dev/App.vue`:
 
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
-import { AgileLatex, type AgileLatexExport } from '../src/index'
+import { LatexFormula, type LatexFormulaExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)
 const editorRef = useTemplateRef('editorRef')
-const lastResult = ref<AgileLatexExport | null>(null)
+const lastResult = ref<LatexFormulaExport | null>(null)
 
-function onRender(result: AgileLatexExport) {
+function onRender(result: LatexFormulaExport) {
   lastResult.value = result
 }
 </script>
@@ -1313,10 +1313,10 @@ ls dist/
 Expected output:
 ```
 dist/
-├── agile-latex-formula.mjs       (ESM)
-├── agile-latex-formula.cjs       (CJS)
+├── latex-formula.mjs       (ESM)
+├── latex-formula.cjs       (CJS)
 ├── index.d.ts            (type declarations)
-├── AgileLatex.vue.d.ts   (component type)
+├── LatexFormula.vue.d.ts   (component type)
 ├── types.d.ts            (export types)
 └── ... (chunk files if any)
 ```
@@ -1324,8 +1324,8 @@ dist/
 - [ ] **Step 3: Verify .d.ts exports match expected API**
 
 Read `dist/index.d.ts` and confirm it exports:
-- `AgileLatex` (component)
-- `AgileLatexExport` (type)
+- `LatexFormula` (component)
+- `LatexFormulaExport` (type)
 
 - [ ] **Step 4: Strip MathJax fonts from treeshaking check**
 

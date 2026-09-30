@@ -3,7 +3,7 @@
     <t-button @click="latexDialogVisible=true">呈现LaTex公式编辑器</t-button>
     <t-dialog v-model:visible="latexDialogVisible" :cancelBtn="null" :confirmBtn="null" width="960" top="2vh">
       <div class="editor-container">
-        <AgileLatex ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
+        <LatexFormula ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
       </div>
     </t-dialog>
     <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" :confirmBtn="null" width="960">
@@ -17,10 +17,10 @@
 <script setup lang="ts">
 import { ref,useTemplateRef } from 'vue'
 import { Button as TButton, Dialog as TDialog} from 'tdesign-vue-next'
-import { AgileLatex, type AgileLatexExport } from '../src/index'
+import { LatexFormula, type LatexFormulaExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)
-const lastResult = ref<AgileLatexExport | null>(null)
+const lastResult = ref<LatexFormulaExport | null>(null)
 const latexDialogVisible = ref(false)
 const dialogVisible = ref(false)
 const editorRef =useTemplateRef('editorRef')
@@ -28,7 +28,7 @@ const exportData = async () => {
   const result = await editorRef.value?.exportFormula()
   console.log(result)
 }
-function onRender(result: AgileLatexExport) {
+function onRender(result: LatexFormulaExport) {
   console.log("onRender", result)
   dialogVisible.value = true
   lastResult.value = result

@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, type Ref } from 'vue'
+import { ref, watch, onMounted, onUnmounted, type Ref } from 'vue'
 import { useMathJax } from '../composables/useMathJax'
 
 /** 接收父组件传入的 LaTeX 字符串 */
@@ -34,7 +34,7 @@ const { render, isReady, ready } = useMathJax()
 const previewContainer: Ref<HTMLElement | null> = ref(null)
 
 // ── 组件挂载时初始化 MathJax ──
-ready()
+onMounted(ready)
 
 /**
  * 执行实际渲染：
@@ -46,12 +46,13 @@ ready()
 function doRender(latexCode: string): void {
   if (!isReady.value || !previewContainer.value || !latexCode.trim()) return
 
-  const { svgElement } = render(latexCode, true)
   const container = previewContainer.value
-
-  // 清空并追加（纯视觉渲染，不触发任何事件或日志）
-  container.innerHTML = ''
-  container.appendChild(svgElement)
+  try {
+    const { svgElement } = render(latexCode, true)
+    container.replaceChildren(svgElement)
+  } catch (error) {
+    container.textContent = error instanceof Error ? error.message : '公式渲染失败'
+  }
 }
 
 // ── 输入变化 → 300ms 防抖 → 重新渲染 ──
@@ -60,9 +61,12 @@ watch(
   () => props.latex,
   (newVal) => {
     if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => doRender(newVal), 300)
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null
+      doRender(newVal)
+    }, 300)
   },
-  { immediate: true }
+  { immediate: true, flush: 'post' }
 )
 
 // ── MathJax 就绪后首次渲染 ──

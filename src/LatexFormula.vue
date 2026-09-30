@@ -1,61 +1,43 @@
 <template>
-  <div class="agile-latex-formula">
+  <div class="latex-formula" @keydown="onKeyDown">
     <!-- 顶部：符号面板 -->
-    <div class="agile-latex-formula__top">
-      <SymbolPanel @insert="handleInsert" />
+    <div class="latex-formula__top">
+      <SymbolPanel :readonly="readonly" @insert="handleInsert" />
     </div>
     <!-- 底部：输入区（左）+ 预览区（右） -->
-    <div class="agile-latex-formula__bottom">
-      <div class="agile-latex-formula__input">
+    <div class="latex-formula__bottom">
+      <div class="latex-formula__input">
         <!-- 工具栏：撤销/恢复/清除 + 字体 + 字号 + 颜色 -->
-        <div class="agile-latex-formula__input-header">
-          <span class="agile-latex-formula__label">LaTeX 输入</span>
-          <div class="agile-latex-formula__toolbar" @mousedown="snapSelection">
-            <t-button size="small" variant="text" :disabled="!canUndo" title="撤销 (Ctrl+Z)" @click="undo">
+        <div class="latex-formula__input-header">
+          <span class="latex-formula__label">LaTeX 输入</span>
+          <div class="latex-formula__toolbar" @mousedown="snapSelection">
+            <t-button size="small" variant="text" :disabled="readonly || !canUndo" title="撤销 (Ctrl+Z)" @click="undo">
               <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
                 :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
             </t-button>
-            <t-button size="small" variant="text" :disabled="!canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">
+            <t-button size="small" variant="text" :disabled="readonly || !canRedo" title="恢复 (Ctrl+Shift+Z)" @click="redo">
               <rollfront-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
                 :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
             </t-button>
-            <t-button size="small" variant="text" @click="clearInput">
+            <t-button size="small" variant="text" :disabled="readonly" @click="clearInput">
               <clear-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
                 :stroke-width="2.5" />
             </t-button>
             <span class="toolbar-sep" />
             <!-- 字体样式下拉 -->
-            <t-dropdown>
-              <t-button size="small" variant="outline" class="latex__toolbar-title">
-                <span class="title">字体</span>
-                <text-style-icon :fill-color='["#bbd3fb", "#f78d94"]' size="16px"
-                  :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
-              </t-button>
-              <template #dropdown>
-                <t-dropdown-menu>
-                  <t-dropdown-item v-for="opt in fontFamilyOptions" :key="opt.value" @click="applyFont(opt.value)">{{
-                    opt.content }}</t-dropdown-item>
-                </t-dropdown-menu>
-              </template>
-            </t-dropdown>
+            <select class="latex__toolbar-select" aria-label="字体" :disabled="readonly" @change="onFontSelect">
+              <option value="">字体</option>
+              <option v-for="opt in fontFamilyOptions" :key="opt.value" :value="opt.value">{{ opt.content }}</option>
+            </select>
             <!-- 字号下拉 -->
-            <t-dropdown>
-              <t-button size="small" variant="outline" style="margin-left: 4px;" class="latex__toolbar-title">
-                <span class="title">字号</span>
-                <text-icon :fill-color='["#bbd3fb", "#f78d94"]' size="20px" :stroke-color='["currentColor", "#0052d9"]'
-                  :stroke-width="2.5" />
-              </t-button>
-              <template #dropdown>
-                <t-dropdown-menu>
-                  <t-dropdown-item v-for="opt in fontSizeOptions" :key="opt.value" @click="onFontSizeClick(opt)">{{
-                    opt.content }}</t-dropdown-item>
-                </t-dropdown-menu>
-              </template>
-            </t-dropdown>
+            <select class="latex__toolbar-select" aria-label="字号" :disabled="readonly" @change="onFontSizeSelect">
+              <option value="">字号</option>
+              <option v-for="opt in fontSizeOptions" :key="opt.value" :value="opt.value">{{ opt.content }}</option>
+            </select>
             <span class="toolbar-sep" />
             <!-- TDesign 颜色选择器（含预设色块 + 自定义取色） -->
-            <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="red" :colorModes="['monochrome']"
-              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }" :recentColors="false"
+            <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="#e74c3c" :colorModes="['monochrome']" :disabled="readonly"
+              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }" :recent-colors="[]"
               @change="onColorPickerChange" />
           </div>
         </div>
@@ -64,17 +46,17 @@
           @update:model-value="handleInput" />
       </div>
       <!-- 实时公式预览区域 -->
-      <div class="agile-latex-formula__preview">
+      <div class="latex-formula__preview">
         <div class="latex__preview-header">
-          <span class="agile-latex-formula__label">实时预览</span>
+          <span class="latex-formula__label">实时预览</span>
           <div class="latex__preview-action">
-            <t-button size="small" theme="primary" @click="handlePreview" :disabled="!modelValue">
+            <t-button size="small" theme="primary" @click="handlePreview" :disabled="!modelValue || exporting">
               <template #icon>
                 <camera-1-icon :fill-color='"transparent"' :stroke-color='"#ffffff"' :stroke-width="2.5" />
               </template>
               预览
             </t-button>
-            <t-button size="small" theme="primary" @click="handleExport" :disabled="!modelValue">
+            <t-button size="small" theme="primary" @click="handleExport" :disabled="!modelValue || exporting">
               <template #icon>
                 <export-icon :fill-color='["#bbd3fb", "#f78d94"]' :stroke-color='["currentColor", "#ecf2fe"]'
                   :stroke-width="2.5" />
@@ -83,10 +65,11 @@
             </t-button>
           </div>
         </div>
+        <div v-if="exportError" class="latex-formula__error" role="alert">{{ exportError }}</div>
         <PreviewPanel :latex="modelValue" />
       </div>
     </div>
-    <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" confirmBtn="下载" width="80%" :onConfirm="downloadLatex">
+    <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" confirmBtn="下载" width="80%" :onConfirm="downloadLatex" @closed="clearPreviewResult">
       <div class="preview-container">
         <img :src="lastResult?.base64">
       </div>
@@ -95,14 +78,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useTemplateRef, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, nextTick } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
 import LatexInput from './components/LatexInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
-import type { AgileLatexExport } from './types'
-import { RollbackIcon, RollfrontIcon, ClearIcon, TextIcon, TextStyleIcon, ExportIcon, Camera1Icon } from 'tdesign-icons-vue-next'
-import { Button as TButton, Dropdown as TDropdown, DropdownMenu as TDropdownMenu, DropdownItem as TDropdownItem, ColorPicker as TColorPicker, Dialog as TDialog } from 'tdesign-vue-next'
+import type { LatexFormulaExport } from './types'
+import { RollbackIcon, RollfrontIcon, ClearIcon, ExportIcon, Camera1Icon } from 'tdesign-icons-vue-next'
+import { Button as TButton, ColorPicker as TColorPicker, Dialog as TDialog } from 'tdesign-vue-next'
 
 /**
  * 组件 Props — 通过 v-model 绑定 LaTeX 代码
@@ -118,15 +101,23 @@ const props = withDefaults(defineProps<{
 })
 
 const dialogVisible = ref(false)
+const exporting = ref(false)
+const exportError = ref('')
+let disposed = false
+let selectionFrame = 0
 
 
-const lastResult = ref<AgileLatexExport>({
+const lastResult = ref<LatexFormulaExport>({
   latex: '',
   /** MathML 格式的公式表示 */
   mathml: '',
   /** Base64 编码的 PNG 图片（data:image/png;base64,...） */
   base64: ''
 })
+
+function clearPreviewResult() {
+  lastResult.value = { latex: '', mathml: '', base64: '' }
+}
 
 /**
  * 组件 Events
@@ -135,13 +126,13 @@ const lastResult = ref<AgileLatexExport>({
  */
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'render': [result: AgileLatexExport]
+  'render': [result: LatexFormulaExport]
 }>()
 
 /** 导出功能 composable */
 const { exportFormula } = useExport()
 /** LatexInput 组件的模板引用，用于获取原生 textarea 操作光标 */
-const latexInputRef = useTemplateRef('latexInputRef')
+const latexInputRef = ref<InstanceType<typeof LatexInput> | null>(null)
 
 // ═══════════════════════════════════════════════════════════
 // 撤销 / 恢复
@@ -171,7 +162,7 @@ function pushHistory(value: string) {
 
 /** 撤销：从 history 弹出上一步，当前值推入 future */
 function undo() {
-  if (!canUndo.value) return
+  if (props.readonly || !canUndo.value) return
   const prev = history.value.pop()!
   future.value.push(props.modelValue)
   emit('update:modelValue', prev)
@@ -179,7 +170,7 @@ function undo() {
 
 /** 恢复：从 future 弹出下一步，当前值推入 history */
 function redo() {
-  if (!canRedo.value) return
+  if (props.readonly || !canRedo.value) return
   const next = future.value.pop()!
   history.value.push(props.modelValue)
   emit('update:modelValue', next)
@@ -187,6 +178,7 @@ function redo() {
 
 // ── 全局快捷键 Ctrl+Z / Ctrl+Shift+Z ──
 function onKeyDown(e: KeyboardEvent) {
+  if (props.readonly || e.defaultPrevented || !(e.target instanceof HTMLTextAreaElement)) return
   if (e.ctrlKey || e.metaKey) {
     if (e.key === 'z' && !e.shiftKey) {
       e.preventDefault()
@@ -201,8 +193,10 @@ function onKeyDown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => document.addEventListener('keydown', onKeyDown))
-onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
+onUnmounted(() => {
+  disposed = true
+  if (selectionFrame) cancelAnimationFrame(selectionFrame)
+})
 
 // ═══════════════════════════════════════════════════════════
 // 字体颜色
@@ -219,7 +213,7 @@ const presetColors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
 // 所以在 @mousedown 时快照选区，insertAtCursor 用快照值做 fallback。
 // ═══════════════════════════════════════════════════════════
 
-let lastSelection = { start: 0, end: 0 }
+let lastSelection: { start: number; end: number } | null = null
 
 /** 快照当前 textarea 的光标/选区位置 */
 function snapSelection() {
@@ -241,17 +235,22 @@ function snapSelection() {
  * @param placeholder 无选中时插入的占位文本（如 " "）
  */
 function insertAtCursor(before: string, after: string, placeholder: string) {
+  if (props.readonly) return
   const ta = latexInputRef.value?.getNativeTextarea()
   if (!ta) return
 
   // 优先用当前选区，若为空则用 @mousedown 快照的选区
   let start = ta.selectionStart
   let end = ta.selectionEnd
-  if (start === end && lastSelection.start !== lastSelection.end) {
+  if (document.activeElement !== ta && lastSelection) {
     start = lastSelection.start
     end = lastSelection.end
   }
+  lastSelection = null
   const text = props.modelValue
+  start = Math.min(start, text.length)
+  end = Math.min(end, text.length)
+  pushHistory(text)
 
   if (start !== end) {
     // 包裹选中的文本
@@ -259,7 +258,8 @@ function insertAtCursor(before: string, after: string, placeholder: string) {
     const newText = text.slice(0, start) + before + selected + after + text.slice(end)
     emit('update:modelValue', newText)
     // 恢复选中状态：包裹后的内容保持选中
-    requestAnimationFrame(() => {
+    selectionFrame = requestAnimationFrame(() => {
+      if (disposed || !ta.isConnected) return
       ta.focus()
       ta.setSelectionRange(start, start + before.length + selected.length + after.length)
     })
@@ -268,7 +268,8 @@ function insertAtCursor(before: string, after: string, placeholder: string) {
     const newText = text.slice(0, start) + before + placeholder + after + text.slice(end)
     emit('update:modelValue', newText)
     const cursorPos = start + before.length + placeholder.length
-    requestAnimationFrame(() => {
+    selectionFrame = requestAnimationFrame(() => {
+      if (disposed || !ta.isConnected) return
       ta.focus()
       ta.setSelectionRange(cursorPos, cursorPos)
     })
@@ -305,8 +306,16 @@ const fontFamilyOptions = [
 // ═══════════════════════════════════════════════════════════
 
 /** 字号下拉选项点击 → 插入 {\size ...} */
-function onFontSizeClick(data: { content: string; value: string }) {
-  applySize(`\\${data.value}`)
+function onFontSizeSelect(event: Event) {
+  const select = event.target as HTMLSelectElement
+  if (select.value) applySize(`\\${select.value}`)
+  select.value = ''
+}
+
+function onFontSelect(event: Event) {
+  const select = event.target as HTMLSelectElement
+  if (select.value) applyFont(select.value)
+  select.value = ''
 }
 
 /** 颜色按钮 → 插入 \textcolor{hex}{...} */
@@ -331,6 +340,7 @@ function onColorPickerChange(value: string) {
 
 /** 清空输入框 */
 function clearInput() {
+  if (props.readonly || !props.modelValue) return
   pushHistory(props.modelValue)
   emit('update:modelValue', '')
 }
@@ -341,6 +351,7 @@ function clearInput() {
 
 /** 用户在 textarea 输入 → 保存历史 + 更新 modelValue */
 function handleInput(value: string) {
+  if (props.readonly || value === props.modelValue) return
   pushHistory(props.modelValue)
   emit('update:modelValue', value)
 }
@@ -350,6 +361,7 @@ function handleInput(value: string) {
  * （不再追加到末尾，而是智能插入到光标/选区位置）
  */
 function handleInsert(latex: string) {
+  if (props.readonly) return
   pushHistory(props.modelValue)
   const ta = latexInputRef.value?.getNativeTextarea()
   if (!ta) {
@@ -364,7 +376,8 @@ function handleInsert(latex: string) {
   emit('update:modelValue', newText)
   // 插入后光标移到末尾
   const cursorPos = start + latex.length
-  requestAnimationFrame(() => {
+  selectionFrame = requestAnimationFrame(() => {
+    if (disposed || !ta.isConnected) return
     ta.focus()
     ta.setSelectionRange(cursorPos, cursorPos)
   })
@@ -376,14 +389,23 @@ function handleInsert(latex: string) {
 
 /** 导出按钮 → 渲染当前公式 → console.log + emit render */
 async function handleExport() {
-  const result = await doExport()
-  emit('render', result)
+  try {
+    const result = await doExport()
+    if (!disposed) emit('render', result)
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : '公式导出失败'
+  }
 }
 
 async function handlePreview() {
-  const result = await doExport()
-  dialogVisible.value = true
-  lastResult.value = result
+  try {
+    const result = await doExport()
+    if (disposed) return
+    lastResult.value = result
+    dialogVisible.value = true
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : '公式预览失败'
+  }
 }
 /** 将 lastResult.base64 转为 Blob 并触发客户端下载 */
 const downloadLatex = () => {
@@ -412,12 +434,19 @@ const downloadLatex = () => {
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /** 内部导出逻辑：调用 useExport 的 exportFormula */
-async function doExport(): Promise<AgileLatexExport> {
-  return await exportFormula(props.modelValue || '')
+async function doExport(): Promise<LatexFormulaExport> {
+  if (exporting.value) throw new Error('公式正在导出，请稍后重试')
+  exporting.value = true
+  exportError.value = ''
+  try {
+    return await exportFormula(props.modelValue || '')
+  } finally {
+    exporting.value = false
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -428,7 +457,7 @@ async function doExport(): Promise<AgileLatexExport> {
  * 导出当前公式为 { latex, mathml, base64 }
  * 供父组件通过 ref.exportFormula() 调用
  */
-async function exposedExportFormula(): Promise<AgileLatexExport> {
+async function exposedExportFormula(): Promise<LatexFormulaExport> {
   const result = await doExport()
   emit('render', result)
   return result
@@ -440,11 +469,19 @@ async function exposedExportFormula(): Promise<AgileLatexExport> {
  *
  * @param latex — 要渲染的 LaTeX 字符串
  */
-async function exposedRenderFormula(latex: string): Promise<AgileLatexExport> {
+async function exposedRenderFormula(latex: string): Promise<LatexFormulaExport> {
+  if (props.readonly) throw new Error('只读状态下无法载入公式')
   emit('update:modelValue', latex)
-  const result = await exportFormula(latex)
-  emit('render', result)
-  return result
+  await nextTick()
+  if (exporting.value) throw new Error('公式正在导出，请稍后重试')
+  exporting.value = true
+  try {
+    const result = await exportFormula(latex)
+    if (!disposed) emit('render', result)
+    return result
+  } finally {
+    exporting.value = false
+  }
 }
 
 defineExpose({
@@ -455,7 +492,7 @@ defineExpose({
 
 <style scoped>
 /* ── 主布局 ── */
-.agile-latex-formula {
+.latex-formula {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -467,7 +504,7 @@ defineExpose({
 }
 
 /* 顶部：符号面板占 32% 高度 */
-.agile-latex-formula__top {
+.latex-formula__top {
   height: 32%;
   min-height: 150px;
   border-bottom: 1px solid var(--td-component-border);
@@ -475,22 +512,32 @@ defineExpose({
 }
 
 /* 底部：输入区 + 预览区 flex 平分 */
-.agile-latex-formula__bottom {
+.latex-formula__bottom {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
 /* 工具栏（撤销/恢复/清除/字体/字号/颜色） */
-.agile-latex-formula__toolbar {
+.latex-formula__toolbar {
   display: flex;
   align-items: center;
   padding: 0 6px;
 }
 
-.agile-latex-formula__toolbar :deep(.t-button__text) {
+.latex-formula__toolbar :deep(.t-button__text) {
   display: flex;
   align-items: center;
+}
+
+.latex__toolbar-select {
+  height: 28px;
+  margin-left: 4px;
+  padding: 0 4px;
+  color: var(--td-text-color-primary);
+  background: var(--td-bg-color-container);
+  border: 1px solid var(--td-component-border);
+  border-radius: var(--td-radius-default);
 }
 
 .toolbar-sep {
@@ -527,7 +574,7 @@ defineExpose({
   justify-content: center;
 }
 
-.agile-latex-formula__input {
+.latex-formula__input {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -536,7 +583,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex-formula__preview {
+.latex-formula__preview {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -544,7 +591,7 @@ defineExpose({
   min-width: 0;
 }
 
-.agile-latex-formula__input-header,
+.latex-formula__input-header,
 .latex__preview-header {
   display: flex;
   justify-content: space-between;
@@ -552,17 +599,17 @@ defineExpose({
   margin-bottom: 8px;
 }
 
-.agile-latex-formula__label {
+.latex-formula__label {
   font-size: 13px;
   font-weight: 500;
   color: var(--td-text-color-secondary);
 }
 
-.agile-latex-formula__input-header .agile-latex-formula__label {
+.latex-formula__input-header .latex-formula__label {
   margin-bottom: 0;
 }
 
-.agile-latex-formula__input :deep(.t-textarea__inner) {
+.latex-formula__input :deep(.t-textarea__inner) {
   flex: 1;
 }
 

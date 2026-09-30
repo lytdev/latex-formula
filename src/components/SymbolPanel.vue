@@ -13,7 +13,7 @@
         </div>
         <!-- 符号按钮网格：自动换行 + 滚动 -->
         <div class="symbol-grid">
-          <t-button v-for="sym in cat.symbols" :key="sym.label" size="small" variant="outline" :title="sym.label"
+          <t-button v-for="sym in cat.symbols" :key="sym.label" size="small" variant="outline" :title="sym.label" :disabled="readonly"
             @click="onSymbolClick(sym.latex)">
             {{ sym.label }}
           </t-button>
@@ -31,15 +31,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useSymbols } from '../composables/useSymbols'
 import { SearchIcon } from 'tdesign-icons-vue-next'
 import { Tabs as TTabs, TabPanel as TTabPanel, Input as TInput, Button as TButton, Empty as TEmpty } from 'tdesign-vue-next'
 
-/** 向父组件（AgileLatex）emit 需要插入的 LaTeX 代码片段 */
+/** 向父组件（LatexFormula）emit 需要插入的 LaTeX 代码片段 */
 const emit = defineEmits<{
   insert: [latex: string]
 }>()
+defineProps<{ readonly?: boolean }>()
 
 /** 搜索关键词 */
 const searchLabel = ref('')
@@ -73,6 +74,11 @@ const filteredCategories = computed(() => {
 
 /** 当前选中的 Tab key，默认选中第一个分类 */
 const activeTab = ref(filteredCategories.value[0]?.key ?? 'functions')
+watch(filteredCategories, (items) => {
+  if (items.length && !items.some((item) => item.key === activeTab.value)) {
+    activeTab.value = items[0].key
+  }
+})
 
 /** 点击符号按钮 → emit insert 事件，由父组件处理光标处插入 */
 function onSymbolClick(latex: string) {

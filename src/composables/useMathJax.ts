@@ -18,6 +18,9 @@ export interface RenderResult {
   mathml: string
 }
 
+/** 同步排版必须有上限，避免嵌入宿主页面时被超长输入阻塞。 */
+export const MAX_LATEX_LENGTH = 5000
+
 // ═══════════════════════════════════════════════════════════
 // 模块级单例状态
 // 整个应用只创建一个 MathJax 实例。首次调用 useMathJax().ready()
@@ -90,6 +93,9 @@ export function useMathJax(): {
    * @returns { svgElement: SVG 元素, mathml: MathML 字符串 }
    */
   function render(latex: string, display = true): RenderResult {
+    if (latex.length > MAX_LATEX_LENGTH) {
+      throw new Error(`公式过长，最多支持 ${MAX_LATEX_LENGTH} 个字符`)
+    }
     if (!isReady.value) {
       throw new Error('MathJax 未初始化，请先调用 useMathJax().ready()')
     }

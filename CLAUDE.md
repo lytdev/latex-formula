@@ -14,12 +14,12 @@ pnpm preview      # 预览生产构建
 
 ## Architecture
 
-这是一个 Vue 3 组件库（npm 包），核心是单个 SFC `AgileLatex.vue`，对外暴露方法和事件。
+这是一个 Vue 3 组件库（npm 包），核心是单个 SFC `LatexFormula.vue`，对外暴露方法和事件。
 
 **三层结构：**
 
 ```
-AgileLatex.vue （主组件 — 布局 + 数据流编排）
+LatexFormula.vue （主组件 — 布局 + 数据流编排）
 ├── SymbolPanel.vue    顶部符号面板：8 个 Tab 分类、搜索过滤
 ├── LatexInput.vue     左下输入区：TDesign t-textarea，暴露原生 textarea 用于光标操作
 ├── PreviewPanel.vue   右下预览区：防抖 300ms 渲染 MathJax SVG
@@ -38,8 +38,8 @@ AgileLatex.vue （主组件 — 布局 + 数据流编排）
 - `@zumer/snapdom` 用于导出 PNG：将 SVG 放入屏幕外可见容器（`left:-9999px`），完整布局后用 `toCanvas` 截取
 
 **包导出：**
-- 默认导出 `AgileLatex` 组件
-- 类型导出 `AgileLatexExport`（`{ latex, mathml, base64 }`）
+- 默认导出 `LatexFormula` 组件
+- 类型导出 `LatexFormulaExport`（`{ latex, mathml, base64 }`）
 - TDesign 和 Vue 是 **peer dependencies**，MathJax 和 snapdom 是 bundled dependencies
 
 **npm 发布范围：** `"files": ["dist"]`，只有构建产物会发布。

@@ -1,5 +1,5 @@
 /** 导出结果对象 — 包含 LaTeX 源码、MathML 和 base64 图片 */
-export interface AgileLatexExport {
+export interface LatexFormulaExport {
   /** LaTeX 源码 */
   latex: string
   /** MathML 格式的公式表示 */
