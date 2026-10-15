@@ -22,4 +22,7 @@ test('published entry points and declarations exist', async () => {
   const declarations = await readFile(new URL('../dist/index.d.ts', import.meta.url), 'utf8')
   assert.match(declarations, /default/)
   assert.match(declarations, /LatexFormulaExport/)
+  for (const type of ['FontFamilyOption', 'SymbolCategory', 'SymbolItem']) {
+    assert.ok(declarations.includes(type), `public type: ${type}`)
+  }
 })

@@ -1,35 +1,29 @@
 <template>
   <div class="playground">
-    <t-button @click="latexDialogVisible=true">呈现LaTex公式编辑器</t-button>
-    <t-dialog v-model:visible="latexDialogVisible" :cancelBtn="null" :confirmBtn="null" width="960" top="2vh">
       <div class="editor-container">
         <LatexFormula ref="editorRef" v-model="latexCode" placeholder="输入 LaTeX 公式..." @render="onRender" />
       </div>
-    </t-dialog>
-    <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" :confirmBtn="null" width="960">
+    <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" :confirmBtn="null" width="760">
       <div class="preview-container">
-        <img :src="lastResult?.base64">
+        <img :src="lastResult?.url">
       </div>
     </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref,useTemplateRef } from 'vue'
-import { Button as TButton, Dialog as TDialog} from 'tdesign-vue-next'
+import { ref } from 'vue'
+import { Dialog as TDialog} from 'tdesign-vue-next'
 import { LatexFormula, type LatexFormulaExport } from '../src/index'
 
 const latexCode = ref(String.raw`\frac{d}{dx}\sin(x) = \cos(x)`)
 const lastResult = ref<LatexFormulaExport | null>(null)
-const latexDialogVisible = ref(false)
 const dialogVisible = ref(false)
-const editorRef =useTemplateRef('editorRef')
-const exportData = async () => {
-  const result = await editorRef.value?.exportFormula()
-  console.log(result)
-}
 function onRender(result: LatexFormulaExport) {
   console.log("onRender", result)
+  const url = URL.createObjectURL(result.blob);
+  console.log("url", url)
+  result.url=url
   dialogVisible.value = true
   lastResult.value = result
 }
@@ -54,7 +48,9 @@ body {
   gap: 16px;
 }
 .editor-container{
-  height: 720px;
+  width: 760px;
+  height: 560px;
+  margin: 0 auto;
 }
 .t-dialog__footer{
   padding: 0;

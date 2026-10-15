@@ -1,70 +1,81 @@
 import { useMathJax } from './useMathJax'
 import type { LatexFormulaExport } from '../types'
-import { snapdom } from '@zumer/snapdom'
 
-/**
- * 将 LaTeX 公式渲染成 SVG 后再转为 base64 PNG 图片。
- *
- * 核心流程：
- * 1. 将 SVG 克隆到屏幕外的一个可见容器中（不使用 opacity:0），
- *    让浏览器完成完整的布局计算
- * 2. 用 @zumer/snapdom 截取该容器为 Canvas
- * 3. Canvas → toDataURL → base64 PNG
- *
- * 使用屏幕外容器（left:-9999px）而非 opacity:0，
- * 是为了确保浏览器正确解析 SVG 内部的 ex 单位和 viewBox。
- */
-export async function svgToBase64(svgElement: Element): Promise<string> {
-  // 创建一个屏幕外但完全可见的容器，让 SVG 正确布局
+/** Rasterize self-contained MathJax SVG directly, without a base64 intermediate. */
+async function svgToPngBlob(svgElement: Element, scale: number): Promise<Blob> {
+  const svg = (svgElement.matches('svg') ? svgElement : svgElement.querySelector('svg'))?.cloneNode(true) as SVGSVGElement | undefined
+  if (!svg) throw new Error('公式未生成有效的 SVG 图像')
   const container = document.createElement('div')
-  container.style.cssText =
-    'position:fixed;left:-9999px;top:0;font-size:18px;padding:2px 0;margin:0;'
-
-  const clone = svgElement.cloneNode(true) as SVGElement
-  clone.removeAttribute('style')
-  container.appendChild(clone)
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;font-size:18px;color:#000;'
+  container.appendChild(svg)
   document.body.appendChild(container)
-
-  // 用 snapdom 截取容器为 Canvas（2x 分辨率保证清晰度）
+  let url: string | undefined
   try {
-    const { width, height } = container.getBoundingClientRect()
-    if (!width || !height || width * 2 > 4096 || height * 2 > 4096 || width * height * 4 > 16_777_216) {
-      throw new Error('公式图片尺寸过大，无法导出')
+    // Resolve MathJax's ex units in the document before decoding the standalone SVG.
+    const bounds = svg.getBoundingClientRect()
+    const width = Math.ceil(bounds.width * scale)
+    const height = Math.ceil(bounds.height * scale)
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+      throw new Error('公式图片尺寸无效，无法导出')
     }
-    const canvas = await snapdom.toCanvas(container, {
-      scale: 2,
-      reconcile: true,
+    if (width > 16_384 || height > 16_384 || width * height > 32_000_000) {
+      throw new Error('图片尺寸过大，请缩短公式或减小字号。')
+    }
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    svg.setAttribute('width', String(width))
+    svg.setAttribute('height', String(height))
+    svg.style.color = '#000'
+    url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], {
+      type: 'image/svg+xml;charset=utf-8',
+    }))
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('SVG 图像解码失败。'))
+      img.src = url!
     })
-    return canvas.toDataURL('image/png')
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('浏览器无法创建 Canvas。')
+    context.drawImage(img, 0, 0, width, height)
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG 编码失败。')), 'image/png')
+    })
   } finally {
+    if (url) URL.revokeObjectURL(url)
     container.remove()
   }
 }
 
-/**
- * 导出功能的组合式函数。
- *
- * @returns exportFormula — 接收 LaTeX 字符串，返回完整的导出对象
- */
+/** 同一份 PNG 数据同时提供 Blob 和兼容的 data URL。 */
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('PNG 数据读取失败。'))
+    }
+    reader.onerror = () => reject(new Error('PNG 数据读取失败。'))
+    reader.onabort = () => reject(new Error('PNG 数据读取已取消。'))
+    reader.readAsDataURL(blob)
+  })
+}
+
 export function useExport(): {
   exportFormula: (latex: string) => Promise<LatexFormulaExport>
 } {
   const { render, ready } = useMathJax()
 
-  /**
-   * 渲染 LaTeX 并导出为 { latex, mathml, base64 }。
-   *
-   * @param latex - 用户输入的 LaTeX 代码
-   * @returns 包含 LaTeX 源码、MathML 字符串和 base64 PNG 的导出对象
-   */
   async function exportFormula(latex: string): Promise<LatexFormulaExport> {
-    // 确保 MathJax 已初始化（幂等调用，重复调用无副作用）
+    if (!latex.trim()) throw new Error('公式不能为空')
     ready()
-    // render 是同步的，直接获取 SVG 元素和 MathML 字符串
     const { svgElement, mathml } = render(latex)
-    // SVG → base64 PNG
-    const base64 = await svgToBase64(svgElement)
-    return { latex, mathml, base64 }
+    if (mathml.includes('<merror')) throw new Error('公式语法错误，无法导出 PNG')
+    const blob = await svgToPngBlob(svgElement, 2)
+    const base64 = await blobToDataUrl(blob)
+    return { latex, mathml, base64, blob }
   }
 
   return { exportFormula }

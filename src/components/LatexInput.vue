@@ -6,7 +6,7 @@
       :value="modelValue"
       :placeholder="placeholder"
       :readonly="readonly"
-      :autosize="{ minRows: 8, maxRows: 20 }"
+      :autosize="{ minRows: 2, maxRows: 8 }"
       @change="onInput"
     />
   </div>

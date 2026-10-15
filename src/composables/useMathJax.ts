@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import { applySvgFonts } from './formulaFonts'
 import { mathjax } from 'mathjax-full/js/mathjax.js'
 import { TeX } from 'mathjax-full/js/input/tex.js'
 import { SVG } from 'mathjax-full/js/output/svg.js'
@@ -128,6 +129,7 @@ export function useMathJax(): {
     mathItem.typeset(doc!)
 
     const svgElement = mathItem.typesetRoot as unknown as SVGElement
+    applySvgFonts(svgElement)
 
     return { svgElement, mathml }
   }

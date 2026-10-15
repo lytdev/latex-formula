@@ -1,15 +1,15 @@
 <template>
   <div class="latex-formula" @keydown="onKeyDown">
     <!-- 顶部：符号面板 -->
-    <div class="latex-formula__top">
-      <SymbolPanel :readonly="readonly" @insert="handleInsert" />
+    <div class="latex-formula__top" @mousedown="snapSelection">
+      <SymbolPanel :readonly="readonly" :visual="editMode === 'visual'" :symbols="symbols" @insert="handleInsert" />
     </div>
     <!-- 底部：输入区（左）+ 预览区（右） -->
-    <div class="latex-formula__bottom">
+    <div class="latex-formula__bottom" :class="{ 'latex-formula__bottom--visual': editMode === 'visual' }">
       <div class="latex-formula__input">
         <!-- 工具栏：撤销/恢复/清除 + 字体 + 字号 + 颜色 -->
         <div class="latex-formula__input-header">
-          <span class="latex-formula__label">LaTeX 输入</span>
+          <span v-if="editMode === 'source'" class="latex-formula__label">LaTeX 输入</span>
           <div class="latex-formula__toolbar" @mousedown="snapSelection">
             <t-button size="small" variant="text" :disabled="readonly || !canUndo" title="撤销 (Ctrl+Z)" @click="undo">
               <rollback-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
@@ -19,15 +19,20 @@
               <rollfront-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px"
                 :stroke-color='["currentColor", "#0052d9"]' :stroke-width="2.5" />
             </t-button>
-            <t-button size="small" variant="text" :disabled="readonly" @click="clearInput">
+            <t-button size="small" variant="text" :disabled="readonly" title="清除" aria-label="清除" @click="clearInput">
               <clear-icon :fill-color='["#bbd3fb", "#f78d94"]' size="22px" :stroke-color='["currentColor", "#0052d9"]'
                 :stroke-width="2.5" />
             </t-button>
+            <div class="latex-formula__mode" role="group" aria-label="编辑模式">
+              <button type="button" :aria-pressed="editMode === 'source'" @click="editMode = 'source'; onColorPickerVisibleChange(false)">源码</button>
+              <button type="button" :aria-pressed="editMode === 'visual'" @click="editMode = 'visual'">可视化</button>
+            </div>
+            <template v-if="editMode === 'visual'">
             <span class="toolbar-sep" />
             <!-- 字体样式下拉 -->
             <select class="latex__toolbar-select" aria-label="字体" :disabled="readonly" @change="onFontSelect">
               <option value="">字体</option>
-              <option v-for="opt in fontFamilyOptions" :key="opt.value" :value="opt.value">{{ opt.content }}</option>
+              <option v-for="opt in resolvedFontFamilyOptions" :key="opt.value" :value="opt.value">{{ opt.content }}</option>
             </select>
             <!-- 字号下拉 -->
             <select class="latex__toolbar-select" aria-label="字号" :disabled="readonly" @change="onFontSizeSelect">
@@ -36,19 +41,34 @@
             </select>
             <span class="toolbar-sep" />
             <!-- TDesign 颜色选择器（含预设色块 + 自定义取色） -->
-            <t-color-picker size="small" :swatch-colors="presetColors" defaultValue="#e74c3c" :colorModes="['monochrome']" :disabled="readonly"
-              :borderless="true" format="HEX" :popup-props="{ placement: 'bottom-right' }" :recent-colors="[]"
-              @change="onColorPickerChange" />
+            <t-popup :visible="colorPickerVisible" trigger="click" placement="bottom-right"
+              :disabled="readonly" @visible-change="onColorPickerVisibleChange">
+              <t-button class="t-color-picker__trigger" size="small" variant="text" :disabled="readonly" aria-label="公式颜色">
+                <span class="latex__color-swatch" :style="{ backgroundColor: confirmedColor }" />
+                {{ confirmedColor }}
+              </t-button>
+              <template #content>
+                <t-color-picker-panel v-model="pendingColor" :swatch-colors="presetColors" :color-modes="['monochrome']"
+                  format="HEX" :recentColors="false" :disabled="readonly" />
+                <div class="latex__color-actions">
+                  <t-button size="small" variant="outline" @click="onColorPickerVisibleChange(false)">取消</t-button>
+                  <t-button size="small" theme="primary" :disabled="readonly" @click="confirmColor">确定</t-button>
+                </div>
+              </template>
+            </t-popup>
+            </template>
           </div>
         </div>
         <!-- LaTeX 输入框 -->
-        <LatexInput ref="latexInputRef" :model-value="modelValue" :placeholder="placeholder" :readonly="readonly"
+        <LatexInput v-if="editMode === 'source'" ref="latexInputRef" :model-value="modelValue" :placeholder="placeholder" :readonly="readonly"
           @update:model-value="handleInput" />
+        <VisualInput v-else ref="visualInputRef" :model-value="modelValue" :readonly="readonly" :font-family-options="resolvedFontFamilyOptions"
+          @update:model-value="handleInput" @undo="undo" @redo="redo" />
       </div>
       <!-- 实时公式预览区域 -->
       <div class="latex-formula__preview">
         <div class="latex__preview-header">
-          <span class="latex-formula__label">实时预览</span>
+          <span v-if="editMode === 'source'" class="latex-formula__label">实时预览</span>
           <div class="latex__preview-action">
             <t-button size="small" theme="primary" @click="handlePreview" :disabled="!modelValue || exporting">
               <template #icon>
@@ -66,7 +86,7 @@
           </div>
         </div>
         <div v-if="exportError" class="latex-formula__error" role="alert">{{ exportError }}</div>
-        <PreviewPanel :latex="modelValue" />
+        <PreviewPanel v-if="editMode === 'source'" :latex="modelValue" />
       </div>
     </div>
     <t-dialog v-model:visible="dialogVisible" :cancelBtn="null" confirmBtn="下载" width="80%" :onConfirm="downloadLatex" @closed="clearPreviewResult">
@@ -80,12 +100,14 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, nextTick } from 'vue'
 import SymbolPanel from './components/SymbolPanel.vue'
+import { mathFontOptions } from './composables/mathFontOptions'
 import LatexInput from './components/LatexInput.vue'
+import VisualInput from './components/VisualInput.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import { useExport } from './composables/useExport'
-import type { LatexFormulaExport } from './types'
+import type { LatexFormulaExport, FontFamilyOption, SymbolCategory } from './types'
 import { RollbackIcon, RollfrontIcon, ClearIcon, ExportIcon, Camera1Icon } from 'tdesign-icons-vue-next'
-import { Button as TButton, ColorPicker as TColorPicker, Dialog as TDialog } from 'tdesign-vue-next'
+import { Button as TButton, ColorPickerPanel as TColorPickerPanel, Popup as TPopup, Dialog as TDialog } from 'tdesign-vue-next'
 
 /**
  * 组件 Props — 通过 v-model 绑定 LaTeX 代码
@@ -94,35 +116,38 @@ const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   readonly?: boolean
+  presetColors?: string[]
+  fontFamilyOptions?: FontFamilyOption[]
+  symbols?: SymbolCategory[]
 }>(), {
   modelValue: '',
   placeholder: '输入 LaTeX 公式...',
   readonly: false,
+  presetColors: () => ['#ff0000', '#e67e22', '#fac800', '#54ff00', '#007dff', '#9b59b6', '#e91e63', '#795548', '#000000'],
+  fontFamilyOptions: () => [],
+  symbols: () => [],
 })
 
 const dialogVisible = ref(false)
+const colorPickerVisible = ref(false)
+const confirmedColor = ref('#e74c3c')
+const pendingColor = ref(confirmedColor.value)
 const exporting = ref(false)
 const exportError = ref('')
 let disposed = false
 let selectionFrame = 0
 
 
-const lastResult = ref<LatexFormulaExport>({
-  latex: '',
-  /** MathML 格式的公式表示 */
-  mathml: '',
-  /** Base64 编码的 PNG 图片（data:image/png;base64,...） */
-  base64: ''
-})
+const lastResult = ref<LatexFormulaExport | null>(null)
 
 function clearPreviewResult() {
-  lastResult.value = { latex: '', mathml: '', base64: '' }
+  lastResult.value = null
 }
 
 /**
  * 组件 Events
  *   update:modelValue — v-model 标准 emit
- *   render           — 导出/渲染完成时触发，携带 { latex, mathml, base64 }
+ *   render           — 导出/渲染完成时触发，携带 { latex, mathml, base64, blob }
  */
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -133,6 +158,8 @@ const emit = defineEmits<{
 const { exportFormula } = useExport()
 /** LatexInput 组件的模板引用，用于获取原生 textarea 操作光标 */
 const latexInputRef = ref<InstanceType<typeof LatexInput> | null>(null)
+const visualInputRef = ref<InstanceType<typeof VisualInput> | null>(null)
+const editMode = ref<'source' | 'visual'>('visual')
 
 // ═══════════════════════════════════════════════════════════
 // 撤销 / 恢复
@@ -202,10 +229,6 @@ onUnmounted(() => {
 // 字体颜色
 // ═══════════════════════════════════════════════════════════
 
-/** 预设色板（红/橙/黄/绿/青/蓝/紫/粉/深橙/棕/灰/黑） */
-const presetColors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
-  '#1abc9c', '#3498db', '#9b59b6', '#e91e63',
-  '#ff5722', '#795548', '#607d8b', '#000000']
 
 // ═══════════════════════════════════════════════════════════
 // 光标/选区处理
@@ -217,6 +240,10 @@ let lastSelection: { start: number; end: number } | null = null
 
 /** 快照当前 textarea 的光标/选区位置 */
 function snapSelection() {
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.snapSelection()
+    return
+  }
   const ta = latexInputRef.value?.getNativeTextarea()
   if (ta) {
     lastSelection = { start: ta.selectionStart, end: ta.selectionEnd }
@@ -236,6 +263,10 @@ function snapSelection() {
  */
 function insertAtCursor(before: string, after: string, placeholder: string) {
   if (props.readonly) return
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.insert(before, after, placeholder)
+    return
+  }
   const ta = latexInputRef.value?.getNativeTextarea()
   if (!ta) return
 
@@ -291,15 +322,20 @@ const fontSizeOptions = [
 ]
 
 /** 字体样式下拉选项 — 对应 LaTeX 字体命令 */
-const fontFamilyOptions = [
-  { content: '加粗', value: 'mathbf' },
-  { content: '斜体', value: 'mathit' },
+const defaultFontFamilyOptions: FontFamilyOption[] = [
+  ...mathFontOptions,
+  { content: 'Times New Roman', value: 'times' },
   { content: '下划线', value: 'underline' },
-  { content: 'Sans serif', value: 'mathsf' },
-  { content: '手写体', value: 'mathcal' },
   { content: '黑板报体', value: 'mathbb' },
-  { content: '德文尖角体', value: 'mathfrak' },
 ]
+
+const resolvedFontFamilyOptions = computed(() => {
+  const options = new Map(defaultFontFamilyOptions.map(option => [option.value, { ...option }]))
+  for (const option of props.fontFamilyOptions) {
+    options.set(option.value, { ...options.get(option.value), ...option })
+  }
+  return [...options.values()]
+})
 
 // ═══════════════════════════════════════════════════════════
 // 工具栏按钮处理函数
@@ -320,22 +356,42 @@ function onFontSelect(event: Event) {
 
 /** 颜色按钮 → 插入 \textcolor{hex}{...} */
 function applyColor(hex: string) {
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.applyColor(hex)
+    return
+  }
   insertAtCursor(`\\textcolor{${hex}}{`, '}', ' ')
 }
 
 /** 字体样式按钮 → 插入 \style{...} */
 function applyFont(cmd: string) {
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.applyFont(cmd)
+    return
+  }
   insertAtCursor(`\\${cmd}{`, '}', ' ')
 }
 
 /** 字号声明 → 插入 {\size ...} */
 function applySize(cmd: string) {
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.applySize(cmd)
+    return
+  }
   insertAtCursor(`{${cmd} `, '}', ' ')
 }
 
-/** TDesign ColorPicker 选中颜色 */
-function onColorPickerChange(value: string) {
-  applyColor(value)
+/** 选色只更新草稿，确认后才修改公式。 */
+function confirmColor() {
+  if (props.readonly) return
+  confirmedColor.value = pendingColor.value
+  applyColor(confirmedColor.value)
+  colorPickerVisible.value = false
+}
+
+function onColorPickerVisibleChange(visible: boolean) {
+  colorPickerVisible.value = visible
+  pendingColor.value = confirmedColor.value
 }
 
 /** 清空输入框 */
@@ -362,6 +418,10 @@ function handleInput(value: string) {
  */
 function handleInsert(latex: string) {
   if (props.readonly) return
+  if (editMode.value === 'visual') {
+    visualInputRef.value?.insert(latex)
+    return
+  }
   pushHistory(props.modelValue)
   const ta = latexInputRef.value?.getNativeTextarea()
   if (!ta) {
@@ -409,7 +469,7 @@ async function handlePreview() {
 }
 /** 将 lastResult.base64 转为 Blob 并触发客户端下载 */
 const downloadLatex = () => {
-  const base64 = lastResult.value.base64
+  const base64 = lastResult.value?.base64
   if (!base64) return
 
   // base64 格式: data:image/png;base64,xxxx
@@ -454,7 +514,7 @@ async function doExport(): Promise<LatexFormulaExport> {
 // ═══════════════════════════════════════════════════════════
 
 /**
- * 导出当前公式为 { latex, mathml, base64 }
+ * 导出当前公式为 { latex, mathml, base64, blob }
  * 供父组件通过 ref.exportFormula() 调用
  */
 async function exposedExportFormula(): Promise<LatexFormulaExport> {
@@ -497,16 +557,16 @@ defineExpose({
   flex-direction: column;
   height: 100%;
   min-height: 450px;
-  min-width: 860px;
+  min-width: 680px;
   border: 1px solid var(--td-component-border);
   border-radius: var(--td-radius-default);
   overflow: hidden;
 }
 
-/* 顶部：符号面板占 32% 高度 */
+/* 顶部：符号面板占 48% 高度 */
 .latex-formula__top {
-  height: 32%;
-  min-height: 150px;
+  height: 48%;
+  min-height: 320px;
   border-bottom: 1px solid var(--td-component-border);
   overflow: hidden;
 }
@@ -518,12 +578,37 @@ defineExpose({
   min-height: 0;
 }
 
+.latex-formula__bottom--visual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 12px;
+}
+.latex-formula__bottom--visual .latex-formula__input,
+.latex-formula__bottom--visual .latex-formula__preview { display: contents; }
+.latex-formula__bottom--visual .latex-formula__input-header {
+  grid-area: 1 / 1;
+  justify-content: flex-start;
+  min-width: 0;
+}
+.latex-formula__bottom--visual .latex__preview-header { grid-area: 1 / 2; }
+.latex-formula__bottom--visual .latex-formula__error { grid-area: 2 / 1 / 3 / -1; }
+.latex-formula__bottom--visual .visual-input { grid-area: 3 / 1 / 4 / -1; }
+
 /* 工具栏（撤销/恢复/清除/字体/字号/颜色） */
 .latex-formula__toolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
   align-items: center;
   padding: 0 6px;
 }
+
+.latex-formula__mode { display: inline-flex; border: 1px solid var(--td-component-border); border-radius: 4px; overflow: hidden; }
+.latex-formula__mode button { border: 0; padding: 4px 8px; cursor: pointer; font-size: 12px; color: var(--td-text-color-secondary); background: var(--td-bg-color-container); }
+.latex-formula__mode button[aria-pressed="true"] { color: var(--td-brand-color); background: var(--td-brand-color-light); }
+.latex-formula__mode button:focus-visible { outline: 2px solid var(--td-brand-color); outline-offset: -2px; }
 
 .latex-formula__toolbar :deep(.t-button__text) {
   display: flex;
@@ -531,6 +616,9 @@ defineExpose({
 }
 
 .latex__toolbar-select {
+  width: 68px;
+  min-width: 0;
+  flex: 0 0 68px;
   height: 28px;
   margin-left: 4px;
   padding: 0 4px;
@@ -545,6 +633,22 @@ defineExpose({
   height: 20px;
   background: var(--td-component-border);
   margin: 0 6px;
+}
+
+.latex__color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  margin-right: 8px;
+  border: 1px solid var(--td-component-border);
+}
+
+.latex__color-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--td-component-border);
 }
 
 /* 颜色预设色块按钮 */
@@ -598,6 +702,8 @@ defineExpose({
   align-items: center;
   margin-bottom: 8px;
 }
+
+.latex-formula__input-header { flex-wrap: wrap; gap: 8px; }
 
 .latex-formula__label {
   font-size: 13px;

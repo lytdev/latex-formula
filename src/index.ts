@@ -12,4 +12,4 @@ import 'tdesign-vue-next/es/style/index.css'
 
 export { default as LatexFormula } from './LatexFormula.vue'
 export { default } from './LatexFormula.vue'
-export type { LatexFormulaExport } from './types'
+export type { LatexFormulaExport, FontFamilyOption, SymbolCategory, SymbolItem } from './types'
