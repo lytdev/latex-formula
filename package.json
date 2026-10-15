@@ -1,6 +1,6 @@
 {
   "name": "@agilehub/latex-formula",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vue 3 LaTeX editor component with MathJax rendering, symbol library, and export to LaTeX/MathML/base64 PNG",
   "repository": {
     "type": "git",
